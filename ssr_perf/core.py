@@ -23,24 +23,22 @@ def getArgs():
     optional = parser.add_argument_group('Optional arguments')
     optional.add_argument('-o', '--output', type=argparse.FileType('w'), metavar='<FILE>', default=sys.stdout, help='Output file name. Default: Input file name + _perf.tsv')
     optional.add_argument('-a', '--analyse', action='store_true', default=False, help='Generate a summary HTML report.')
-    optional.add_argument('-rep', '--repeats', type=argparse.FileType('r'), metavar='<FILE>', help='File with list of repeats (Not allowed with -m and/or -M)')
-    optional.add_argument('-m', '--min-motif-size', type=int, metavar='<INT>', default=1, help='Minimum size of a repeat motif in bp (Not allowed with -rep)')
-    optional.add_argument('-M', '--max-motif-size', type=int, metavar='<INT>', default=6, help='Maximum size of a repeat motif in bp (Not allowed with -rep)')
     cutoff_group = optional.add_mutually_exclusive_group()
-    cutoff_group.add_argument('--min-length', type=int, metavar='<INT>', help='Minimum length cutoff of repeat')
-    cutoff_group.add_argument('--min-units', metavar='INT or FILE', help="Minimum number of repeating units to be considered. Can be an integer or a file specifying cutoffs for different motif sizes.")
-    optional.add_argument('--no-prefix', action='store_true', help='Avoid optional prefixes. Only applicable with --min-units)')
-    optional.add_argument('--no-suffix', action='store_true', help='Avoid optional suffixes. Only applicable with --min-units)')
-    # optional.add_argument('-h', '--help', action='help', help="Show this help message and exit")
+    cutoff_group.add_argument('-l', '--min-length', type=int, metavar='<INT>', help='Minimum length cutoff of repeat')
+    cutoff_group.add_argument('-u', '--min-units', metavar='INT or FILE', help="Minimum number of repeating units to be considered. Can be an integer or a file specifying cutoffs for different motif sizes.")
+    optional.add_argument('-rep', '--repeats', type=argparse.FileType('r'), metavar='<FILE>', help='File with list of repeats (Not allowed with -m and/or -M)')
+    optional.add_argument('-m', '--min-motif-size', type=int, metavar='<INT>', help='Minimum size of a repeat motif in bp (Not allowed with -rep)')
+    optional.add_argument('-M', '--max-motif-size', type=int, metavar='<INT>', help='Maximum size of a repeat motif in bp (Not allowed with -rep)')
     optional.add_argument('--version', action='version', version='ssr-perf ' + __version__)
-
-    # repeats_input = parser.add_mutually_exclusive_group()
-    # motif_size_group = repeats_input.add_argument_group('motif_size')
-
 
     args = parser.parse_args()
     if args.repeats and (args.min_motif_size or args.max_motif_size):
         parser.error("-rep is not allowed with -m/-M")
+    if args.repeats is None:
+        if args.min_motif_size is None:
+            args.min_motif_size = 1
+        if args.max_motif_size is None:
+            args.max_motif_size = 6
     if args.output.name == "<stdout>":
         args.output = open(splitext(args.input)[0] + '_perf.tsv', 'w')
     return args
