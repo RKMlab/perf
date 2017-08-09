@@ -17,26 +17,28 @@ def getArgs():
     """
     __version__ = 'v0.2.0'
     parser = argparse.ArgumentParser()
-    parser.add_argument('-fi', '--fasta-input', required=True, metavar='<FILE>', help='Input FASTA file')
-    parser.add_argument('-fo', '--out', type=argparse.FileType('w'), metavar='<FILE>', default=sys.stdout, help='Output file')
-    parser.add_argument('--version', action='version', version='ssr_finder ' + __version__)
-    parser.add_argument('--no-prefix', action='store_true', help='Avoid optional prefixes (See main help. Only applicable with --min-units)')
-    parser.add_argument('--no-suffix', action='store_true', help='Avoid optional suffixes (See main help. Only applicable with --min-units)')
-    parser.add_argument('-a', '--analyse', action='store_true', default=False, help='Generates summary HTML report.')
-
-    repeats_input = parser.add_mutually_exclusive_group()
-    repeats_input.add_argument('-rep', '--repeats', type=argparse.FileType('r'), metavar='<FILE>', help='File with list of repeats')
-    motif_size_group = repeats_input.add_argument_group('motif_size')
-    motif_size_group.add_argument('-m', '--min-motif-size', type=int, metavar='<INT>', default=1, help='Minimum size of a repeat motif in bp')
-    motif_size_group.add_argument('-M', '--max-motif-size', type=int, metavar='<INT>', default=6, help='Maximum size of a repeat motif in bp')
-
+    parser.add_argument('-i', '--input', required=True, metavar='<FILE>', help='Input file in FASTA format')
+    parser.add_argument('-o', '--output', type=argparse.FileType('w'), metavar='<FILE>', default=sys.stdout, help='Output file name. Default: Input file name + _perf.tsv')
+    parser.add_argument('-a', '--analyse', action='store_true', default=False, help='Generate a summary HTML report.')
+    parser.add_argument('-rep', '--repeats', type=argparse.FileType('r'), metavar='<FILE>', help='File with list of repeats (Not allowed with -m and/or -M)')
+    parser.add_argument('-m', '--min-motif-size', type=int, metavar='<INT>', default=1, help='Minimum size of a repeat motif in bp (Not allowed with -rep)')
+    parser.add_argument('-M', '--max-motif-size', type=int, metavar='<INT>', default=6, help='Maximum size of a repeat motif in bp (Not allowed with -rep)')
     cutoff_group = parser.add_mutually_exclusive_group()
     cutoff_group.add_argument('--min-length', type=int, metavar='<INT>', help='Minimum length cutoff of repeat')
     cutoff_group.add_argument('--min-units', metavar='INT or FILE', help="Minimum number of repeating units to be considered. Can be an integer or a file specifying cutoffs for different motif sizes.")
+    parser.add_argument('--no-prefix', action='store_true', help='Avoid optional prefixes (See main help. Only applicable with --min-units)')
+    parser.add_argument('--no-suffix', action='store_true', help='Avoid optional suffixes (See main help. Only applicable with --min-units)')
+    parser.add_argument('--version', action='version', version='ssr-perf ' + __version__)
+
+    # repeats_input = parser.add_mutually_exclusive_group()
+    # motif_size_group = repeats_input.add_argument_group('motif_size')
+
 
     args = parser.parse_args()
-    if args.out.name == "<stdout>":
-        args.out = open(splitext(args.fasta_input)[0] + '_perf.tsv', 'w')
+    if args.repeats and (args.min_motif_size or args.max_motif_size):
+        parser.error("-rep is not allowed with -m/-M")
+    if args.output.name == "<stdout>":
+        args.output = open(splitext(args.input)[0] + '_perf.tsv', 'w')
     return args
 
 def getSSRNative(args):
@@ -46,8 +48,8 @@ def getSSRNative(args):
     """
     length_cutoff = args.min_length
     repeat_file = args.repeats
-    seq_file = args.fasta_input
-    out_file = args.out
+    seq_file = args.input
+    out_file = args.output
     repeats_info = build_rep_set(repeat_file, length_cutoff=length_cutoff)
     repeat_set = set(repeats_info.keys())
     print('Using length cutoff of %d' % (length_cutoff), file=sys.stderr)
@@ -71,8 +73,8 @@ def getSSR_units(args, unit_cutoff):
     The repeat length cutoffs vary for different motif sizes.
     """
     repeat_file = args.repeats
-    seq_file = args.fasta_input
-    out_file = args.out
+    seq_file = args.input
+    out_file = args.output
     
     repeats_info = build_rep_set(repeat_file, unit_cutoff=unit_cutoff)
     repeat_set = set(repeats_info.keys())

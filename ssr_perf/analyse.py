@@ -29,8 +29,8 @@ def writetoHTML(html_report):
     html_report.close()
 
 def analyse(args):
-    seq_file = args.fasta_input
-    repeatsOutFile = args.out.name
+    seq_file = args.input
+    repeatsOutFile = args.output.name
     current_dir = os.path.dirname(__file__)
     analyseDataOUT = open(current_dir + '/lib/src/data.js', 'w')
     html_report = os.path.splitext(repeatsOutFile)[0] + '.html'

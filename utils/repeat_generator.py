@@ -68,4 +68,4 @@ def generate_repeats(min_size, max_size, output_file):
 
 min_motif_size = args.min_motif_size
 max_motif_size = args.max_motif_size
-generate_repeats(min_motif_size, max_motif_size, args.out)
+generate_repeats(min_motif_size, max_motif_size, args.output)
