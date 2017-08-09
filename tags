@@ -1,0 +1,33 @@
+!_TAG_FILE_FORMAT	2	/extended format; --format=1 will not append ;" to lines/
+!_TAG_FILE_SORTED	1	/0=unsorted, 1=sorted, 2=foldcase/
+!_TAG_PROGRAM_AUTHOR	Darren Hiebert	/dhiebert@users.sourceforge.net/
+!_TAG_PROGRAM_NAME	Exuberant Ctags	//
+!_TAG_PROGRAM_URL	http://ctags.sourceforge.net	/official site/
+!_TAG_PROGRAM_VERSION	5.9~svn20110310	//
+L	ssr_finder.py	/^                    L = line.strip().split()$/;"	kind:variable	line:191
+alphabet	utils/repeat_generator.py	/^alphabet = ['A', 'C', 'G', 'T']$/;"	kind:variable	line:7
+args	ssr_finder.py	/^args = getArgs()$/;"	kind:variable	line:174
+build_regex	ssr_finder.py	/^def build_regex(repeat, unit_cutoff, no_prefix=False, no_suffix=False):$/;"	kind:function	line:102
+expand_repeat	utils/repeat_generator.py	/^def expand_repeat(string, size):$/;"	kind:function	line:19
+expanded	utils/repeat_generator.py	/^        expanded = expand_repeat(repeat, max_size)$/;"	kind:variable	line:42
+expanded_set	utils/repeat_generator.py	/^expanded_set = set()$/;"	kind:variable	line:10
+getArgs	ssr_finder.py	/^def getArgs():$/;"	kind:function	line:20
+getSSRNative	ssr_finder.py	/^def getSSRNative(seq_file, repeat_file, length_cutoff):$/;"	kind:function	line:41
+getSSR_regex	ssr_finder.py	/^def getSSR_regex(seq_file, repeat_file):$/;"	kind:function	line:124
+get_cycles	utils/repeat_generator.py	/^def get_cycles(string):$/;"	kind:function	line:30
+max_size	utils/repeat_generator.py	/^max_size = 6$/;"	kind:variable	line:9
+min_size	utils/repeat_generator.py	/^min_size = 1$/;"	kind:variable	line:8
+repeat	utils/repeat_generator.py	/^        repeat = ''.join(combination)$/;"	kind:variable	line:40
+repeat_cycles	utils/repeat_generator.py	/^            repeat_cycles = get_cycles(repeat)$/;"	kind:variable	line:47
+repeat_cycles	utils/repeat_generator.py	/^            repeat_cycles = get_cycles(repeat_revcomp)$/;"	kind:variable	line:57
+repeat_generator.py	utils/repeat_generator.py	1;"	kind:file	line:1
+repeat_revcomp	utils/repeat_generator.py	/^        repeat_revcomp = rev_comp(repeat)$/;"	kind:variable	line:41
+repeat_set	utils/repeat_generator.py	/^repeat_set = set()$/;"	kind:variable	line:11
+rev_comp	ssr_finder.py	/^def rev_comp(string):$/;"	kind:function	line:36
+rev_comp	utils/repeat_generator.py	/^def rev_comp(string):$/;"	kind:function	line:14
+ssr_finder.py	ssr_finder.py	1;"	kind:file	line:1
+strand	utils/repeat_generator.py	/^                strand = '+'$/;"	kind:variable	line:49
+strand	utils/repeat_generator.py	/^                strand = '-'$/;"	kind:variable	line:59
+string	utils/repeat_generator.py	/^                string = expand_repeat(cycle, max_size)$/;"	kind:variable	line:50
+string	utils/repeat_generator.py	/^                string = expand_repeat(cycle, max_size)$/;"	kind:variable	line:60
+unit_cutoff	ssr_finder.py	/^    unit_cutoff = dict()$/;"	kind:variable	line:182

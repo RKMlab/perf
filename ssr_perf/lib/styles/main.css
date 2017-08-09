@@ -1,0 +1,17 @@
+.tab-content {
+    height: 90vh !important
+}
+
+.ss-multi-selected {
+    max-height: 100px;
+    overflow-y: auto;
+}
+
+.container>.row {
+    margin: 0px !important
+}
+
+.card {
+    max-width: 98% !important;
+    overflow: auto;
+}

@@ -1,0 +1,3 @@
+include ssr_perf/lib/src/*js
+include ssr_perf/lib/template.html
+include ssr_perf/lib/styles/*css

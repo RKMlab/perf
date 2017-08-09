@@ -1,0 +1,279 @@
+<!DOCTYPE>
+<html>
+
+<head>
+    <title>PERF Analysis</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        /* ^^/styles/mini-default.min.css$$ */
+    </style>
+    <style>
+        /* ^^/styles/slim-select.css$$ */
+    </style>
+    <style>
+        /* ^^/styles/main.css$$ */
+    </style>
+</head>
+
+<body>
+    <div style="margin-top:2vh; margin-left: 2vw; width: 96vw; height: 96vh">
+        <div class="tabs">
+
+            <input type="radio" name="tab-group" id="summary" checked aria-hidden="true">
+            <label for="summary" aria-hidden="true">Summary</label>
+            <div id="summary-tab" class="tab-content">
+                <div class="container">
+                    <div class="row" style="padding-left: 5%; padding-right: 5%; width: 100%; padding-top: 20px">
+                        <div class="col-sm-12 col-md-12 col-lg-12" style="border: 1px solid #aeaeae">
+                            <div class="card" style="border: 0px">
+                                <div class="section">
+                                    <h3>Basic Info</h3>
+                                    <div class="row" style="width : 90%; padding-left: 5%">
+                                        <div class="col-sm-12 col-md-12 col-lg-12">
+                                            <h4 style="position: relative; font-weight: bold; left: -20px">Genome info</h4>
+                                        </div>
+                                        <div class="col-sm-6 col-md-6 col-lg-3" style="padding-bottom: 20px"><b>Fasta file: </b><span id='name'>name</span></div>
+                                        <div class="col-sm-6 col-md-6 col-lg-3" style="padding-bottom: 20px"><b>Total size: </b><span id='genomeSize'>genomeSize</span></div>
+                                        <div class="col-sm-6 col-md-6 col-lg-3" style="padding-bottom: 20px"><b>GC %</b>: </b><span id='GC'>GC</span></div>
+                                        <div class="col-sm-6 col-md-6 col-lg-3" style="padding-bottom: 20px"><b>No.of sequences: </b><span id='numSeq'>numSeq</span></div>
+                                    </div>
+                                    <div class="row" style="width : 90%; padding-left: 5%">
+                                        <div class="col-sm-12 col-md-12 col-lg-12">
+                                            <h4 style="position: relative; font-weight: bold; left: -20px">Repeat info</h4>
+                                        </div>
+                                        <div class="col-sm-6 col-md-6 col-lg-4" style="padding-bottom: 20px"><b>Repeat occurrences: </b><span id='totalRepFreq'>totalRepFreq</span></div>
+                                        <div class="col-sm-6 col-md-6 col-lg-4" style="padding-bottom: 20px"><b>Total repeat bases: </b><span id='totalRepBases'>totalRepBases</span></div>
+                                        <div class="col-sm-6 col-md-6 col-lg-4" style="padding-bottom: 20px"><b>Percent genome covered: </b><span id='percentGenomeCovered'>percentGenomeCovered</span></div>
+                                        <div class="col-sm-6 col-md-6 col-lg-4" style="padding-bottom: 20px"><b>Repeat classes: </b><span id='numRepClass'>numRepClass</span>/501</div>
+                                        <div class="col-sm-6 col-md-6 col-lg-4" style="padding-bottom: 20px"><b>Repeat occurrences per MB: </b><span id='repDensityByFreq'>repDensityByFreq</span></div>
+                                        <div class="col-sm-6 col-md-6 col-lg-4" style="padding-bottom: 20px"><b>Repeat bases per MB: </b><span id='repDensityByBases'>repDensityByBases</span></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row" style="padding-left: 5%; padding-right: 5%; width: 100%; padding-top: 20px">
+                        <div class="col-sm-12 col-md-12 col-lg-6" style="border: 1px solid #aeaeae; width: 90%">
+                            <div class="card" style="border: 0px">
+                                <div class="section">
+                                    <h3 style="text-align: center; padding: 10px">Most repeat unit occurrences</h3>
+                                    <table id="most-repeat-units-table" class="scrollable">
+                                        <thead>
+                                            <tr>
+                                                <th title="Sequence id">Sequence id</th>
+                                                <th title="Start">Start</th>
+                                                <th title="End">End</th>
+                                                <th title="Repeat class">Repeat class</th>
+                                                <th title="Length">Length</th>
+                                                <th title="Strand">Strand</th>
+                                                <th title="Repeat units">Repeat units</th>
+                                                <th title="Actual repeat">Actual repeat</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-sm-12 col-md-12 col-lg-6" style="border: 1px solid #aeaeae">
+                            <div class="card" style="border: 0px">
+                                <div class="section">
+                                    <h3 style="text-align: center; padding: 10px">Longest repeat occurrences</h3>
+                                    <table id="longest-repeats-table" class="scrollable">
+                                        <thead>
+                                            <tr>
+                                                <th title="Sequence id">Sequence id</th>
+                                                <th title="Start">Start</th>
+                                                <th title="End">End</th>
+                                                <th title="Repeat class">Repeat class</th>
+                                                <th title="Length">Length</th>
+                                                <th title="Strand">Strand</th>
+                                                <th title="Repeat units">Repeat units</th>
+                                                <th title="Actual repeat">Actual repeat</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!---- Repeat Frequency - Bar Plot Tab-->
+            <input type="radio" name="tab-group" id="bar-plot" aria-hidden="true">
+            <label for="bar-plot" aria-hidden="true" class="plotTabLabel">Repeat Frequency</label>
+            <div id="bar-plotarea" class="tab-content">
+                <div class="container">
+                    <div class="row" style="width: 100%; padding-top: 20px">
+                        <div class="col-sm-12 col-md-6 col-lg-6">
+                            <form style="margin: 0px !important; padding: 5px !important">
+                                <fieldset>
+                                    <legend style="font-size: 1em">Sort Selection</legend>
+                                    <div class="input-group">
+                                        Show
+                                        <input id="bar-num" type="number" min="1" max="501" value="10" name="repeats" style="padding: 3px !important; width: 100px"></input>
+                                        <select id="bar-select" style="padding-top: 3px; padding-bottom: 3px">
+                                            <option value="1" selected>most</option>
+                                            <option value="0">least</option>                                            
+                                        </select> Repeats
+                                    </div>
+                                </fieldset>
+                            </form>
+                        </div>
+                        <div class="col-sm-12 col-md-6 col-lg-6">
+                            <form style="margin: 0px !important; padding: 5px !important">
+                                <fieldset>
+                                    <legend style="font-size: 1em">Repeat Selection</legend>
+                                    <div class="col-sm-6 col-md-6 col-lg-6 input-group">
+                                        <select id="bar-repeats-sel" style="width: 20vw !important" multiple></select>
+                                    </div>
+                                    <div class=" col-sm-6 col-md-6 col-lg-6 input-group" style="margin-left: 20px">
+                                        <div>
+                                            <input type="radio" id="bar-sort-radio" value=1 name="bar-sort">
+                                            <label for="bar-sort-radio">Sort by frequency</label>
+                                        </div>
+                                        <div>
+                                            <input type="radio" id="bar-unsort-radio" value=0 name="bar-sort" checked>
+                                            <label for="bar-unsort-radio">Sort alphabetically</label>
+                                        </div>
+                                    </div>
+                                </fieldset>
+                            </form>
+                        </div>
+                    </div>
+                    <div class="row" id="bar-plot-svg" style="padding-top: 20px; width: 100%; height: 72vh">
+                    </div>
+                </div>
+            </div>
+
+            <!---- Repeat Dsitribution - Pie Plot Tab-->
+            <input type="radio" name="tab-group" id="pie-plot" aria-hidden="true">
+            <label for="pie-plot" aria-hidden="true" class="plotTabLabel">Repeat Distribution</label>
+            <div id="pie-plotarea" class="tab-content">
+                <div class="container">
+                    <div class="row" style="width: 100%; padding-top: 20px">
+                        <div class="col-sm-6 col-md-3 col-lg-3">
+                            <form style="margin: 0px !important; padding: 5px !important">
+                                <fieldset>
+                                    <legend style="font-size: 1em">Data type</legend>
+                                    <div class="input-group">
+                                        <div>
+                                            <input type="radio" id="freq-radio" value="Frequency" name="data-type" checked>
+                                            <label for="freq-radio">Frequency</label>
+                                        </div>
+                                        <div>
+                                            <input type="radio" id="bases-radio" value="Bases" name="data-type">
+                                            <label for="bases-radio">Bases covered</label>
+                                        </div>
+                                    </div>
+                                </fieldset>
+                            </form>
+                        </div>
+                        <div class="col-sm-6 col-md-3 col-lg-3">
+                            <form style="margin: 0px !important; padding: 5px !important">
+                                <fieldset>
+                                    <legend style="font-size: 1em">Group by length</legend>
+                                    <div class="input-group">
+                                        <div>
+                                            <input type="radio" id="lengroup-on" value="1" name="len-group" checked>
+                                            <label for="lengroup-on">On</label>
+                                        </div>
+                                        <div>
+                                            <input type="radio" id="lengroup-off" value="0" name="len-group">
+                                            <label for="lengroup-off">Off</label>
+                                        </div>
+                                    </div>
+                                </fieldset>
+                            </form>
+                        </div>
+                        <div class="col-sm-12 col-md-6 col-lg-6">
+                            <form style="margin: 0px !important; padding: 5px !important; padding-bottom: 14px !important">
+                                <fieldset>
+                                    <legend style="font-size: 1em">Repeat Selection</legend>
+                                    <div class="input-group">
+                                        <select id="pie-repeats-sel" style="width: 30vw !important" multiple></select>
+                                    </div>
+                                </fieldset>
+                            </form>
+                        </div>
+                    </div>
+                    <div class="row" id="pie-plot-svg" style="padding-top: 20px; width: 100%; height: 72vh">
+                    </div>
+                </div>
+            </div>
+
+            <!---- Sequence length vs frequency - Line Plot Tab-->
+            <input type="radio" name="tab-group" id="line-plot" aria-hidden="true">
+            <label for="line-plot" aria-hidden="true" class="plotTabLabel">Sequence Length vs Frequency</label>
+            <div id="line-plotarea" class="tab-content">
+                <div class="container">
+                    <div class="row" style="width: 100%; padding-top: 20px">
+                        <div class="col-sm-12 col-md-6 col-lg-6">
+                            <form style="margin: 0px !important; padding: 5px !important; padding-bottom: 14px !important">
+                                <fieldset>
+                                    <legend style="font-size: 1em">Length Range</legend>
+                                    <div class="row">
+                                        <div class="col-sm-6 col-md-6 col-lg-6">
+                                            <label for="min-length">Min :</label>
+                                            <input id="min-length" type="number" value="12" min="12" style="padding: 3px !important; width: 60%"></input>
+                                        </div>
+                                        <div class="col-sm-6 col-md-6 col-lg-6">
+                                            <label for="max-length">Max:</label>
+                                            <input id="max-length" type="number" value="12" min="12" style="padding: 3px !important; width: 60%"></input>
+                                        </div>
+                                    </div>
+                                </fieldset>
+                            </form>
+                        </div>
+                        <div class="col-sm-12 col-md-6 col-lg-6">
+                            <form style="margin: 0px !important; padding: 5px !important; padding-bottom: 14px !important">
+                                <fieldset>
+                                    <legend style="font-size: 1em">Repeat Selection</legend>
+                                    <div class="input-group">
+                                        <select id="line-repeats-sel" style="width: 30vw !important" multiple></select>
+                                    </div>
+                                </fieldset>
+                            </form>
+                        </div>
+                    </div>
+                    <div class="row" id="line-plot-svg" style="padding-top: 20px; width: 100%; height: 72vh">
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</body>
+<script>
+    //^^/src/lodash.min.js$$
+</script>
+<script>
+    //^^/src/highcharts.js$$
+</script>
+<script>
+    //^^/src/exporting.js$$
+</script>
+<script>
+    //^^/src/data.js$$
+</script>
+<script>
+    //^^/src/slim-select.js$$
+</script>
+<script>
+    //^^/src/init.js$$
+</script>
+<script>
+    //^^/src/barPlot.js$$
+</script>
+<script>
+    //^^/src/piePlot.js$$
+</script>
+<script>
+    //^^/src/linePlot.js$$
+</script>
+
+</html>
