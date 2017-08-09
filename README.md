@@ -10,6 +10,27 @@ PERF is a recursive acronym that stands for "PERF is an Exhaustive Repeat Finder
   - Flexible. While having sensible defaults, most of the parameters are customizable by the user at runtime.
   - Repeat cutoffs can be specified either in terms of the total repeat length or in terms of number of repeating units.
   - TSV and HTML report. The default output is an easily parseable and exportable tab-separated format. Optionally, PERF also generates an interactive HTML report that depicts trends in repeat data as concise charts and tables.
-  
+
+## Installation
+PERF can be directly installed using pip with the package name `ssr-perf`. 
+```bash
+pip install ssr-perf
+```
+
+This name was chosen for the package so as not to clash with the existing `perf` command of Linux.
+
+Alternatively, it can also be installed from the source code:
+```bash
+# Download the git repo
+git clone https://github.com/RKMlab/perf.git
+
+# Install
+cd perf
+python setup.py install
+```
+Both of the methods add a console command `ssr-perf`, which can be executed from any directory.
+
+## Usage instructions
+
 ## HTML report
 In addition to the default tab-separated output, PERF can also generate a fully interactive HTML report for easy downstream analysis of the repeat data. An example HTML report can be accessed [here](https://raw.githubusercontent.com/RKMlab/perf/html-report/test_data/test_input_perf.html)
