@@ -1,5 +1,5 @@
 #! /usr/bin/env python
-# pylint: disable=C0111
+# pylint: disable=C0111, C0301
 
 from __future__ import print_function
 import sys
@@ -132,22 +132,21 @@ def build_rep_set(repeat_file, **kwargs):
 
 
 def get_ssrs(seq_record, repeats_info, repeats, out_file):
-    
-    repeat_lengths = repeats_info['rep_lengths'] # Lengths of repeat sequences which will be the window sizes
-    motif_fallback = repeats_info['fallback'] # Number of bases by which the window should fallback
+    repeat_lengths = repeats_info['rep_lengths'] # All possible length cutoffs
+    # motif_fallback = repeats_info['fallback']
     print("\nProcessing %s" % (seq_record.id), file=sys.stderr)
     input_seq = str(seq_record.seq).upper()
     input_seq_length = len(input_seq)
     for length_cutoff in repeat_lengths:
+        fallback = length_cutoff - 1
         sub_start = 0  # substring start
-        sub_stop = sub_start + repeat_lengths[-1]  # substring stop 
+        sub_stop = sub_start + repeat_lengths[-1]  # substring stop
         while sub_stop <= input_seq_length:
             sub_stop = sub_start + length_cutoff
             subseq = input_seq[sub_start:sub_stop]
             if subseq in repeats:
                 match = True
                 motif_length = repeats_info[subseq]['motif_length']
-                fallback = motif_fallback[motif_length]
                 offset = length_cutoff % motif_length
                 repeat_seq = input_seq[sub_start+offset:sub_start+offset+motif_length]
                 i = 0
