@@ -3,7 +3,7 @@
 PERF is a Python package developed for fast and accurate identification of microsatellites from DNA sequences. Microsatellites or Simple Sequence Repeats (SSRs) are short tandem repeats of 1-6nt motifs. They are present in all genomes, and have a wide range of uses and functional roles. The existing tools for SSR identification have one or more caveats in terms of speed, comprehensiveness, accuracy, ease-of-use, flexibility and memory usage. PERF was designed to address all these problems.
 
 PERF is a recursive acronym that stands for "PERF is an Exhaustive Repeat Finder". It is compatible with both Python 2 (tested on Python 2.7) and 3 (tested on Python 3.5). Its key features are:
-  - Fast run time, despite being a single-threaded application. As an example, identification of all SSRs from the entire human genome takes less than 10 minutes. The speed can be approved 5-fold using PyPy (has a runtime of less than 2min using PyPy 5.8)
+  - Fast run time, despite being a single-threaded application. As an example, identification of all SSRs from the entire human genome takes less than 10 minutes. The speed can be further improved 5-fold using PyPy (human genome finishes in less than 2min using PyPy 5.8)
   - Linear time and space complexity (O(n))
   - 100% accurate and comprehensive - Does not miss any repeats or does not pick any incorrect ones
   - Easy to use - The only required argument is the input DNA sequence in FASTA format
@@ -28,7 +28,13 @@ $ git clone https://github.com/RKMlab/perf.git
 $ cd perf
 $ python setup.py install
 ```
-Both of the methods add a console command `ssr-perf`, which can be executed from any directory.
+Both of the methods add a console command `ssr-perf`, which can be executed from any directory. It can also be used without installation by running the `core.py` file in the `ssr_perf` subfolder:
+
+```bash
+$ git clone https://github.com/RKMlab/perf.git
+$ cd perf/ssr_perf
+$ python core.py -h # Print the help message of PERF (see below)
+```
 
 ## Usage instructions
 The help message and available options can be accessed using
@@ -38,9 +44,8 @@ $ ssr-perf --help # Long option
 ```
 which gives the following output
 ```
-usage: ssr-perf [-h] -i <FILE> [-o <FILE>] [-a] [-rep <FILE>] [-m <INT>]
-                [-M <INT>] [--min-length <INT> | --min-units INT or FILE]
-                [--no-prefix] [--no-suffix] [--version]
+usage: ssr-perf [-h] -i <FILE> [-o <FILE>] [-a] [-l <INT> | -u INT or FILE]
+                [-rep <FILE>] [-m <INT>] [-M <INT>] [--version]
 
 Required arguments:
   -i <FILE>, --input <FILE>
@@ -50,6 +55,12 @@ Optional arguments:
   -o <FILE>, --output <FILE>
                         Output file name. Default: Input file name + _perf.tsv
   -a, --analyse         Generate a summary HTML report.
+  -l <INT>, --min-length <INT>
+                        Minimum length cutoff of repeat
+  -u INT or FILE, --min-units INT or FILE
+                        Minimum number of repeating units to be considered.
+                        Can be an integer or a file specifying cutoffs for
+                        different motif sizes.
   -rep <FILE>, --repeats <FILE>
                         File with list of repeats (Not allowed with -m and/or
                         -M)
@@ -59,15 +70,6 @@ Optional arguments:
   -M <INT>, --max-motif-size <INT>
                         Maximum size of a repeat motif in bp (Not allowed with
                         -rep)
-  --min-length <INT>    Minimum length cutoff of repeat
-  --min-units INT or FILE
-                        Minimum number of repeating units to be considered.
-                        Can be an integer or a file specifying cutoffs for
-                        different motif sizes.
-  --no-prefix           Avoid optional prefixes. Only applicable with --min-
-                        units)
-  --no-suffix           Avoid optional suffixes. Only applicable with --min-
-                        units)
   --version             show program's version number and exit
 ```
 The details of each option are given below:

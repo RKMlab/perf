@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 
-# pylint: disable=C0103
+# pylint: disable=C0103, C0301
 
 from __future__ import print_function
 import sys
@@ -17,7 +17,7 @@ def getArgs():
     """
     __version__ = 'v0.2.0'
     parser = argparse.ArgumentParser()
-    helper = parser._action_groups.pop()
+    parser._action_groups.pop()
     required = parser.add_argument_group('Required arguments')
     required.add_argument('-i', '--input', required=True, metavar='<FILE>', help='Input file in FASTA format')
     optional = parser.add_argument_group('Optional arguments')
@@ -77,10 +77,8 @@ def getSSR_units(args, unit_cutoff):
     repeat_file = args.repeats
     seq_file = args.input
     out_file = args.output
-    
     repeats_info = build_rep_set(repeat_file, unit_cutoff=unit_cutoff)
     repeat_set = set(repeats_info.keys())
-    
     print('Using unit cutoff of ', unit_cutoff, file=sys.stderr)
 
     num_records = 0
