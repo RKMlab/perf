@@ -102,4 +102,11 @@ for (let i in barSortRadios) {
     }
 }
 
-barPlot('sort');
+
+let initial = 1;
+const placeholderBarPlot = function() {
+    if (initial) {
+        barPlot('sort');
+        initial = 0
+    }
+}
