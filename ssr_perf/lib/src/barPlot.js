@@ -3,14 +3,16 @@ const barDatum = function(data, n, s, repeats, rs) {
     let datum = []
     let orderedRepeats = _.flatMap(repeatSet, function(d) { return d });
     if (repeats) {
-        for (let d in orderedRepeats) { d = orderedRepeats[d]; if (repeats.indexOf(d) > -1) { datum.push([d, _.sum(data[d])]); }}
-        if (rs == 1) { datum = _.sortBy(datum, function(d) { return d[1]; }); datum = datum.reverse(); }
-    }
-    else if (n) {
+        for (let d in orderedRepeats) { d = orderedRepeats[d]; if (repeats.indexOf(d) > -1) { datum.push([d, _.sum(data[d])]); } }
+        if (rs == 1) {
+            datum = _.sortBy(datum, function(d) { return d[1]; });
+            datum = datum.reverse();
+        }
+    } else if (n) {
         for (let d in data) { datum.push([d, _.sum(data[d])]) };
         datum = _.sortBy(datum, function(d) { return d[1]; });
-        datum = datum.slice(0, n);
         if (!(s)) { datum = datum.reverse(); }
+        datum = datum.slice(0, n);
     }
     return datum;
 }
@@ -34,7 +36,7 @@ const barPlot = function(selectionType, repeats) {
     Highcharts.chart('bar-plot-svg', {
         chart: { type: 'column', marginTop: 40, marginLeft: 100 },
         title: { text: null },
-        xAxis: { type: 'category', title: { text: 'Repeat Class' }, labels: { rotation: -45, style: { fontSize: '12px', fontFamily: 'Verdana, sans-serif' }}},
+        xAxis: { type: 'category', title: { text: 'Repeat Class' }, labels: { rotation: -45, style: { fontSize: '12px', fontFamily: 'Verdana, sans-serif' } } },
         yAxis: { min: 0, title: { text: 'Frequency' } },
         legend: { enabled: false },
         tooltip: { pointFormat: 'Frequency: <b>{point.y}</b>' },
@@ -95,6 +97,9 @@ barRepeatSelect.onChange = function(info) {
 const barSortRadios = document.getElementsByName('bar-sort');
 for (let i in barSortRadios) {
     let radio = barSortRadios[i];
-    if (radio.tagName == 'INPUT') { radio.onchange = function() { barPlot('repeat', barPlotRepeats); }
+    if (radio.tagName == 'INPUT') {
+        radio.onchange = function() { barPlot('repeat', barPlotRepeats); }
     }
 }
+
+barPlot('sort');

@@ -9,7 +9,7 @@ from Bio import SeqIO
 
 
 def writetoHTML(html_report):
-    print(html_report)
+    print("Generating HTML report: ", html_report)
     html_report = open(html_report, 'w')
     current_dir = os.path.dirname(__file__)
     with open(current_dir + '/lib/template.html') as report:
