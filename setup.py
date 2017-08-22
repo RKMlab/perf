@@ -16,5 +16,5 @@ setup(
   entry_points={
     'console_scripts': ['PERF=PERF.core:main']
   },
-  include_package_data=True
+  include_package_data=True # change path according to package name in MANIFEST.in
 )

@@ -140,7 +140,7 @@ def analyse(args):
     for o in plotData:
         freqs = []
         lengths = sorted(list(plotData[o].keys()))
-        for i in range(12, max(lengths) + 1):
+        for i in range(min(lengths), max(lengths) + 1):
             try:
                 freqs.append(plotData[o][i])
             except KeyError:

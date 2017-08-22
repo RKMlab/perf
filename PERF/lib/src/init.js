@@ -1,22 +1,22 @@
 const sizeSuffix = function(size) {
-    if (size < 1000) { return size + 'bp'; }
-    else if (size < 1000000) { return (size / 1000).toFixed(2) + 'Kb'; }
-    else if (size < 1000000000) { return (size / 1000000).toFixed(2) + 'Mb'; }
-    else { return (size / 1000000000).toFixed(2) + 'Gb'; }
+    if (size < 1000) { return size + 'bp'; } else if (size < 1000000) { return (size / 1000).toFixed(2) + 'Kb'; } else if (size < 1000000000) { return (size / 1000000).toFixed(2) + 'Mb'; } else { return (size / 1000000000).toFixed(2) + 'Gb'; }
 }
 
+let numPrefixObj = { 1: 'Monomer', 2: 'Dimer', 3: 'Trimer', 4: 'Tetramer', 5: 'Pentamer', 6: 'Hexamer', 7: 'Septamer', 8: 'Octamer', 9: 'Enneamer', 10: 'Decamer' }
 let plotInfo = data['info']['plotInfo'];
-let kMers = ['Monomer', 'Dimer', 'Trimer', 'Tetramer', 'Pentamer', 'Hexamer'];
-let kmerObj = { 1: 'Monomer', 2: 'Dimer', 3: 'Trimer', 4: 'Tetramer', 5: 'Pentamer', 6: 'Hexamer' };
-let repeatSet = { Monomer: [], Dimer: [], Trimer: [], Tetramer: [], Pentamer: [], Hexamer: [] };
-for (let repeat in plotInfo) { repeatSet[kmerObj[repeat.length]].push(repeat);}
+let kmerLengths = _.uniq(_.map(Object.keys(plotInfo), function(o) { return o.length; })).sort();
+let kMers = _.map(kmerLengths, function(o) { if (_.map(Object.keys(numPrefixObj), parseFloat).indexOf(o) != -1) { return numPrefixObj[o] } else { return o + '-kmer' } });
+let kmerObj = {};
+for (let k in kMers) { kmerObj[kmerLengths[k]] = kMers[k]; }
+let repeatSet = {};
+for (let k in kMers) { repeatSet[kMers[k]] = []; }
+for (let repeat in plotInfo) { repeatSet[kmerObj[repeat.length]].push(repeat); }
 for (let group in repeatSet) { repeatSet[group].sort(); }
 let basicInfoKeys = ['name', 'genomeSize', 'GC', 'numSeq', 'numRepClass', 'totalRepBases', 'totalRepFreq', 'percentGenomeCovered', 'repDensityByFreq', 'repDensityByBases'];
 for (let k in basicInfoKeys) {
     k = basicInfoKeys[k];
     let spanElement = document.getElementById(k);
-    if (k == 'totalRepBases' || k == 'genomeSize') { spanElement.innerHTML = sizeSuffix(data['info'][k]);}
-    else { spanElement.innerHTML = data['info'][k]; }
+    if (k == 'totalRepBases' || k == 'genomeSize') { spanElement.innerHTML = sizeSuffix(data['info'][k]); } else { spanElement.innerHTML = data['info'][k]; }
     spanElement.setAttribute('title', data['info'][k]);
 }
 

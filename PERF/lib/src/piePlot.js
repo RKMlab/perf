@@ -15,7 +15,8 @@
      }
 
      if (group == 1) {
-         let kmerDataObj = { Monomer: 0, Dimer: 0, Trimer: 0, Tetramer: 0, Pentamer: 0, Hexamer: 0 };
+         let kmerDataObj = {};
+         for (let k in kMers) { kmerDataObj[kMers[k]] = 0; }
          datum = _.map(Object.keys(pieData), function(d) {
              if (type == 'Frequency') { kmerDataObj[kmerObj[d.length]] += _.sum(pieData[d]); } else { kmerDataObj[kmerObj[d.length]] += _.sum(pieData[d]) * d.length; }
          });
