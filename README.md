@@ -3,7 +3,7 @@
 PERF is a Python package developed for fast and accurate identification of microsatellites from DNA sequences. Microsatellites or Simple Sequence Repeats (SSRs) are short tandem repeats of 1-6nt motifs. They are present in all genomes, and have a wide range of uses and functional roles. The existing tools for SSR identification have one or more caveats in terms of speed, comprehensiveness, accuracy, ease-of-use, flexibility and memory usage. PERF was designed to address all these problems.
 
 PERF is a recursive acronym that stands for "PERF is an Exhaustive Repeat Finder". It is compatible with both Python 2 (tested on Python 2.7) and 3 (tested on Python 3.5). Its key features are:
-  - Fast run time, despite being a single-threaded application. As an example, identification of all SSRs from the entire human genome takes less than 10 minutes. The speed can be further improved ~5-fold using [PyPy](https://pypy.org/) (human genome finishes in less than 2 minutes using PyPy v5.8.0)
+  - Fast run time, despite being a single-threaded application. As an example, identification of all SSRs from the entire human genome takes less than 7 minutes. The speed can be further improved ~3- to 4-fold using [PyPy](https://pypy.org/) (human genome finishes in less than 2 minutes using PyPy v5.8.0)
   - Linear time and space complexity (O(n))
   - Identifies perfect SSRs
   - 100% accurate and comprehensive - Does not miss any repeats or does not pick any incorrect ones
@@ -13,12 +13,12 @@ PERF is a recursive acronym that stands for "PERF is an Exhaustive Repeat Finder
   - TSV output and HTML report. The default output is an easily parseable and exportable tab-separated format. Optionally, PERF also generates an interactive HTML report that depicts trends in repeat data as concise charts and tables
 
 ## Installation
-PERF can be directly installed using pip with the package name `ssr-perf`. 
+PERF can be directly installed using pip with the package name `perf_ssr`. 
 ```bash
-$ pip install ssr-perf
+$ pip install perf_ssr
 ```
 
-This name was chosen for the package so as not to clash with the existing `perf` command of Linux.
+This name was chosen for the package so as not to clash with the existing `perf` package.
 
 Alternatively, it can also be installed from the source code:
 ```bash
@@ -29,24 +29,24 @@ $ git clone https://github.com/RKMlab/perf.git
 $ cd perf
 $ python setup.py install
 ```
-Both of the methods add a console command `ssr-perf`, which can be executed from any directory. It can also be used without installation by running the `core.py` file in the `ssr_perf` subfolder:
+Both of the methods add a console command `PERF`, which can be executed from any directory. It can also be used without installation by running the `core.py` file in the `PERF` subfolder:
 
 ```bash
 $ git clone https://github.com/RKMlab/perf.git
-$ cd perf/ssr_perf
+$ cd perf/PERF
 $ python core.py -h # Print the help message of PERF (see below)
 ```
 
-## Usage instructions
+## Usage
 The help message and available options can be accessed using
 ```bash
-$ ssr-perf -h # Short option
-$ ssr-perf --help # Long option
+$ PERF -h # Short option
+$ PERF --help # Long option
 ```
 which gives the following output
 ```
-usage: ssr-perf [-h] -i <FILE> [-o <FILE>] [-a] [-l <INT> | -u INT or FILE]
-                [-rep <FILE>] [-m <INT>] [-M <INT>] [--version]
+usage: PERF [-h] -i <FILE> [-o <FILE>] [-a] [-l <INT> | -u INT or FILE]
+            [-rep <FILE>] [-m <INT>] [-M <INT>] [--version]
 
 Required arguments:
   -i <FILE>, --input <FILE>
@@ -79,5 +79,6 @@ The details of each option are given below:
 This is the only required argument for the program. The input file must be a valid FASTA file. PERF uses [Biopython's](http://biopython.org/wiki/SeqIO) FASTA parser to read the input files. It accepts both single-line and multi-line sequences. Files with multiple sequences are also valid. To see more details about the FASTA format, see [this page](http://bioperl.org/formats/sequence_formats/FASTA_sequence_format).
 
 ### `-o or --output`
+
 ### `-a or --analyze`
 In addition to the default tab-separated output, PERF can also generate a fully interactive HTML report for easy downstream analysis of the repeat data. An example HTML report can be accessed [here](https://raw.githubusercontent.com/RKMlab/perf/html-report/test_data/test_input_perf.html) (Right click -> Save As).
