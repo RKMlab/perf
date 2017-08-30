@@ -3,7 +3,7 @@
 PERF is a Python package developed for fast and accurate identification of microsatellites from DNA sequences. Microsatellites or Simple Sequence Repeats (SSRs) are short tandem repeats of 1-6nt motifs. They are present in all genomes, and have a wide range of uses and functional roles. The existing tools for SSR identification have one or more caveats in terms of speed, comprehensiveness, accuracy, ease-of-use, flexibility and memory usage. PERF was designed to address all these problems.
 
 PERF is a recursive acronym that stands for "PERF is an Exhaustive Repeat Finder". It is compatible with both Python 2 (tested on Python 2.7) and 3 (tested on Python 3.5). Its key features are:
-  - Fast run time, despite being a single-threaded application. As an example, identification of all SSRs from the entire human genome takes less than 7 minutes. The speed can be further improved ~3- to 4-fold using [PyPy](https://pypy.org/) (human genome finishes in less than 2 minutes using PyPy v5.8.0)
+  - Fast run time, despite being a single-threaded application. As an example, identification of all SSRs from the entire human genome takes less than 7 minutes. The speed can be further improved ~3 to 4 fold using [PyPy](https://pypy.org/) (human genome finishes in less than 2 minutes using PyPy v5.8.0)
   - Linear time and space complexity (O(n))
   - Identifies perfect SSRs
   - 100% accurate and comprehensive - Does not miss any repeats or does not pick any incorrect ones
@@ -73,12 +73,3 @@ Optional arguments:
                         -rep)
   --version             show program's version number and exit
 ```
-The details of each option are given below:
-
-### `-i or --input`
-This is the only required argument for the program. The input file must be a valid FASTA file. PERF uses [Biopython's](http://biopython.org/wiki/SeqIO) FASTA parser to read the input files. It accepts both single-line and multi-line sequences. Files with multiple sequences are also valid. To see more details about the FASTA format, see [this page](http://bioperl.org/formats/sequence_formats/FASTA_sequence_format).
-
-### `-o or --output`
-
-### `-a or --analyze`
-In addition to the default tab-separated output, PERF can also generate a fully interactive HTML report for easy downstream analysis of the repeat data. An example HTML report can be accessed [here](https://raw.githubusercontent.com/RKMlab/perf/html-report/test_data/test_input_perf.html) (Right click -> Save As).
