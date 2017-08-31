@@ -76,14 +76,14 @@ Optional arguments:
 The details of each option are given below:
 
 ### `-i or --input`
-**Expects:** *FILENAME*<br>
+**Expects:** *FILE*<br>
 **Default:** *None*<br>
 This is the only required argument for the program. The input file must be a valid FASTA file. PERF uses [Biopython's](http://biopython.org/wiki/SeqIO) FASTA parser to read the input files. It accepts both single-line and multi-line sequences. Files with multiple sequences are also valid. To see more details about the FASTA format, see [this page](http://bioperl.org/formats/sequence_formats/FASTA_sequence_format).
 
 ### `-o or --output`
-**Expects:** *FILENAME*<br>
-**Default:** *Input Filname + _perf.tsv (see below)*<br>
-The output is a tab-delimited file, with one SSR record per line. If this option is not provided, the default output filename will the same as the input filename, with its extension replaced with '_perf.tsv'. For example, if the input filename is `mySeq.fa`, the default output filename will be `mySeq_perf.tsv`. If the input filename does not have any extension, `_perf.tsv` will be appended to the filename. Please note that even in the case of no identified SSRs, the output file is still created (therefore overwriting any previous file of the same name) but with no content in the file.
+**Expects:** *STRING (to be used as filename)*<br>
+**Default:** *Input Filename + _perf.tsv (see below)*<br>
+The output is a tab-delimited file, with one SSR record per line. If this option is not provided, the default output filename will the same as the input filename, with its extension replaced with '_perf.tsv'. For example, if the input filename is `my_seq.fa`, the default output filename will be `my_seq_perf.tsv`. If the input filename does not have any extension, `_perf.tsv` will be appended to the filename. Please note that even in the case of no identified SSRs, the output file is still created (therefore overwriting any previous file of the same name) but with no content in the file.
 
 The output columns follow the [BED](https://genome.ucsc.edu/FAQ/FAQformat.html) format. The details of the columns are given below:
 
@@ -113,13 +113,114 @@ YHet    137144    137466    AAGAC   322     -       64      CTTGT
 ```
 
 ### `-a or --analyze`
-**Expects:** None<br>
-**Default:** False<br>
-In addition to the default tab-separated output, PERF can also generate a fully interactive HTML report for easy downstream analysis of the repeat data. An example HTML report can be accessed [here](https://raw.githubusercontent.com/RKMlab/perf/html-report/test_data/test_input_perf.html) (Right click -> Save As).
+**Expects:** *None*<br>
+**Default:** *False*<br>
+In addition to the default tab-separated output, PERF can also generate a fully interactive HTML report for easy downstream analysis of the repeat data. The filename will be the same prefix as that of the main output. For example, if the input filename was `my_seq.fa`, the analysis report will be  `my_seq_perf.html`. An example HTML report can be accessed [here](https://raw.githubusercontent.com/RKMlab/perf/html-report/test_data/test_input_perf.html) (Right click -> Save As).
 
 ### `-l or --min-length`
 **Expects:** *INTEGER*<br>
 **Default:** *12*<br>
+Minimum length cut-off to be considered when finding an SSR. The same cut-off will apply for SSRs of all motif lengths, even if the motif length is not a divisor of this value. In such cases, SSRs that end with a partial motif are also picked if they pass the length cut-off.
+
+### `-u or --min-units`
+**Expects:** *INTEGER* OR *FILE*<br>
+**Default:** *None*<br>
+This option finds SSRs with a minimum number of repeating motifs. The argument accepts either an integer or file. If an integer is specified, the same value is used for all motif lengths. Instead, a specific value for each motif length using a two-column tab-separated file as demonstrated below:
+
+```bash
+$ cat repeat_units.txt
+1	10
+2	6
+3	4
+4	3
+5	2
+6	2
+```
+
+The first column specifies the motif length, and the second column specifies the minimum number of times the motif should be repeated to be considered an SSR. This file can be used to identify repeats with different number of repeating motifs: monomers repeated at least 10 times, dimers repeated at least 6 times etc., using the following command
+``` bash
+$ PERF -i my_seq.fa -m 1 -M 6 -u repeat_units.txt
+```
+
+### `-rep or --repeats`
+**Expects:** *FILE*<br>
+**Default:** *None*<br>
+PERF provides an option to limit the search to specific repeat motifs. The repeats of interest should be specified via a file containing 4 tab-separated columns, as shown below:
+
+```bash
+$ cat my_repeats.txt
+A   A   1   +                                                                
+T   A   1   -
+AG  AG  2   +
+CT  AG  2   -
+GA  AG  2   +
+TC  AG  2   -
+$ PERF -i my_seq.fa -rep my_repeats.txt # Find all A and AG repeats from my_seq.fa
+```
+
+**Note:** This option is not allowed when `-m` or `-M` options are used.
+### `-m or --min-motif-size`
+**Expects:** *INTEGER*<br>
+**Default:** *1*<br>
+Minimum length of motifs to be considered. By default, PERF ignores redundant motifs. For example, a stretch of 12 A's is considered a monomer repeat of 12 A's rather than a dimer repeat of 6 AA's. However, this is only true if `-m` is set to 1. If for example, `-m` is set to 2, then stretches of 12 A's are reported as dimer AA repeats. If this behavior isn't desired, we suggest using the `-rep` option (see above) to specify the motifs that should/shouldn't be included.
+
+### `-M or --max-motif-size`
+**Expects:** *INTEGER*<br>
+**Default:** *6*<br>
+Maximum length of motifs to be considered. Setting a large value of `-M` has a non-trivial effect on both the runtime and memory usage of PERF. This is noticeable with `-M` values above 10.
+
+### `--version`
+Prints the version info of PERF.
+
+## Examples
+
+The following examples assume that the file with input sequence in FASTA format is named `my_seq.fa`.
+
+#### Basic Usage
+``` bash
+# Find all monomer to hexamer repeats of >=12nt length
+$ PERF -i my_seq.fa
+# Specify output filename
+$ PERF -i my_seq.fa -o PERF_output.tsv
+```
+
+#### Generate Analysis Report
+``` bash
+# Find all monomer to hexamer repeats of >=12nt length and generate an HTML report
+$ PERF -i my_seq.fa -a
+# Specify output filename
+$ PERF -i my_seq.fa -o PERF_out.tsv -a # HTML file is called PERF_out.html
+```
+
+#### Set Cut-off Criteria
+```bash
+# Find all monomer to hexamer repeats of >=15nt length
+$ PERF -i my_seq.fa -l 15
+# Find SSRs with at least 6 repeating motifs (for all motif lengths)
+$ PERF -i my_seq.fa -u 6
+```
+
+#### Identify Specific Repeats
+``` bash
+$ cat my_repeats.txt
+AG  AG  2   +
+CT  AG  2   -
+GA  AG  2   +
+TC  AG  2   -
+# Find all AG repeats and generate an HTML report
+$ PERF -i my_seq.fa -rep my_repeats.txt -a
+```
+
+#### Change Motif Length Cut-offs
+```bash
+# Ignore monomer and dimer repeats, and repeats with <4 repeating units
+$ PERF -i my_seq.fa -m 3 -u 4
+# Report only tetramer repeats of >=16nt length, and generate HTML report
+$ PERF -i my_seq.fa -m 4 -M 4 -l 16 -a
+
+```
+
+In all the above examples, the output of PERF is saved to `my_seq_perf.tsv` and the HTML report is saved to `my_seq_perf.html` unless `-o` is specified.
 
 ## Contact
 For queries or suggestions, please contact:
