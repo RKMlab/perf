@@ -76,9 +76,54 @@ Optional arguments:
 The details of each option are given below:
 
 ### `-i or --input`
+**Expects:** *FILENAME*<br>
+**Default:** *None*<br>
 This is the only required argument for the program. The input file must be a valid FASTA file. PERF uses [Biopython's](http://biopython.org/wiki/SeqIO) FASTA parser to read the input files. It accepts both single-line and multi-line sequences. Files with multiple sequences are also valid. To see more details about the FASTA format, see [this page](http://bioperl.org/formats/sequence_formats/FASTA_sequence_format).
 
 ### `-o or --output`
+**Expects:** *FILENAME*<br>
+**Default:** *Input Filname + _perf.tsv (see below)*<br>
+The output is a tab-delimited file, with one SSR record per line. If this option is not provided, the default output filename will the same as the input filename, with its extension replaced with '_perf.tsv'. For example, if the input filename is `mySeq.fa`, the default output filename will be `mySeq_perf.tsv`. If the input filename does not have any extension, `_perf.tsv` will be appended to the filename. Please note that even in the case of no identified SSRs, the output file is still created (therefore overwriting any previous file of the same name) but with no content in the file.
+
+The output columns follow the [BED](https://genome.ucsc.edu/FAQ/FAQformat.html) format. The details of the columns are given below:
+
+| S.No | Column | Description |
+|:----:| ------ | ----------- |
+| 1 | Chromosome | |
+| 2 | Repeat Start | |
+| 3 | Repeat Stop | |
+| 4 | Repeat Class | |
+| 5 | Repeat Length | |
+| 6 | Repeat Strand | |
+| 7 | Motif Number | |
+| 8 | Actual Repeat | |
+
+An example output showing some of the largest repeats from *Drosophila melanogaster* is given below
+```
+X       22012826  22014795  ACTGGG  1969    -       328     TCCCAG
+2RHet   591337    591966    AATACT  629     -       104     ATTAGT
+4       1042143   1042690   AAATAT  547     +       91      AAATAT
+2RHet   598244    598789    AATACT  545     -       90      AGTATT
+XHet    122       663       AGAT    541     +       135     GATA
+X       22422335  22422827  AGAT    492     +       123     GATA
+3R      975265    975710    AAAT    445     -       111     TTAT
+X       15442288  15442724  ACAGAT  436     +       72      ACAGAT
+2L      22086818  22087152  AATACT  334     -       55      TATTAG
+YHet    137144    137466    AAGAC   322     -       64      CTTGT
+```
 
 ### `-a or --analyze`
+**Expects:** None<br>
+**Default:** False<br>
 In addition to the default tab-separated output, PERF can also generate a fully interactive HTML report for easy downstream analysis of the repeat data. An example HTML report can be accessed [here](https://raw.githubusercontent.com/RKMlab/perf/html-report/test_data/test_input_perf.html) (Right click -> Save As).
+
+### `-l or --min-length`
+**Expects:** *INTEGER*<br>
+**Default:** *12*<br>
+
+## Contact
+For queries or suggestions, please contact:
+
+Divya Tej Sowpati - <tej@ccmb.res.in><br>
+Akshay Kumar Avvaru - <avvaru@ccmb.res.in>
+
