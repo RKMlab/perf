@@ -20,7 +20,7 @@ $ pip install perf_ssr
 
 This name was chosen for the package so as not to clash with the existing `perf` package.
 
-Alternatively, it can also be installed from the source code:
+Alternatively, it can be installed from the source code:
 ```bash
 # Download the git repo
 $ git clone https://github.com/RKMlab/perf.git
@@ -89,14 +89,14 @@ The output columns follow the [BED](https://genome.ucsc.edu/FAQ/FAQformat.html) 
 
 | S.No | Column | Description |
 |:----:| ------ | ----------- |
-| 1 | Chromosome | |
-| 2 | Repeat Start | |
-| 3 | Repeat Stop | |
-| 4 | Repeat Class | |
-| 5 | Repeat Length | |
-| 6 | Repeat Strand | |
-| 7 | Motif Number | |
-| 8 | Actual Repeat | |
+| 1 | Chromosome | Chromosome or Sequence Name as specified by the first word in the FASTA header |
+| 2 | Repeat Start | 0-based start position of SSR in the Chromosome |
+| 3 | Repeat Stop | End position of SSR in the Chromosome |
+| 4 | Repeat Class | Class of repeat as grouped by their cyclical variations |
+| 5 | Repeat Length | Total length of identified repeat in nt |
+| 6 | Repeat Strand | Strand of SSR based on their cyclical variation |
+| 7 | Motif Number | Number of times the base motif is repeated |
+| 8 | Actual Repeat | Starting sequence of the SSR irrespective of Repeat class and strand|
 
 An example output showing some of the largest repeats from *Drosophila melanogaster* is given below
 ```
@@ -115,7 +115,7 @@ YHet    137144    137466    AAGAC   322     -       64      CTTGT
 ### `-a or --analyze`
 **Expects:** *None*<br>
 **Default:** *False*<br>
-In addition to the default tab-separated output, PERF can also generate a fully interactive HTML report for easy downstream analysis of the repeat data. The filename will be the same prefix as that of the main output. For example, if the input filename was `my_seq.fa`, the analysis report will be  `my_seq_perf.html`. An example HTML report can be accessed [here](https://raw.githubusercontent.com/RKMlab/perf/html-report/test_data/test_input_perf.html) (Right click -> Save As).
+In addition to the default tab-separated output, PERF can also generate a fully interactive HTML report for easy downstream analysis of the repeat data. The filename will be the same prefix as that of the main output. For example, if the input filename was `my_seq.fa`, the analysis report will be  `my_seq_perf.html`. An example HTML report, generated from the repeat data of *Homo sapiens*, can be accessed [here](https://raw.githubusercontent.com/RKMlab/perf/html-report/test_data/Homo_sapiens_perf.html) (Right click -> Save As).
 
 ### `-l or --min-length`
 **Expects:** *INTEGER*<br>
