@@ -20,7 +20,7 @@ def getArgs():
     """
     Parses command line arguments and returns them to the caller
     """
-    __version__ = 'v0.2.0'
+    __version__ = 'v0.2.1'
     parser = argparse.ArgumentParser()
     parser._action_groups.pop()
     required = parser.add_argument_group('Required arguments')
@@ -34,7 +34,7 @@ def getArgs():
     optional.add_argument('-rep', '--repeats', type=argparse.FileType('r'), metavar='<FILE>', help='File with list of repeats (Not allowed with -m and/or -M)')
     optional.add_argument('-m', '--min-motif-size', type=int, metavar='<INT>', help='Minimum size of a repeat motif in bp (Not allowed with -rep)')
     optional.add_argument('-M', '--max-motif-size', type=int, metavar='<INT>', help='Maximum size of a repeat motif in bp (Not allowed with -rep)')
-    optional.add_argument('--version', action='version', version='ssr-perf ' + __version__)
+    optional.add_argument('--version', action='version', version='PERF ' + __version__)
 
     args = parser.parse_args()
     if args.repeats and (args.min_motif_size or args.max_motif_size):
