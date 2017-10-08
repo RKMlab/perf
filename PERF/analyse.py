@@ -9,13 +9,13 @@ from collections import Counter
 from Bio import SeqIO
 
 
-def writetoHTML(html_report):
-    html_report = open(html_report, 'w')
+def writetoHTML(html_file):
+    html_handle = open(html_file, 'w')
     current_dir = os.path.dirname(__file__)
     with open(current_dir + '/lib/template.html') as report:
         for line in report:
             line = line.strip()
-            print(line, file=html_report)
+            print(line, file=html_handle)
             try:
                 start_index = line.index("^^")
                 stop_index = line.index("$$")
@@ -23,11 +23,11 @@ def writetoHTML(html_report):
                 with open(file_path) as fh:
                     for subline in fh:
                         subline = subline.strip()
-                        print(subline, file=html_report)
+                        print(subline, file=html_handle)
             except ValueError:
                 pass
-    html_report.close()
-    print("HTML report successfully saved to " + html_report)
+    html_handle.close()
+    print("HTML report successfully saved to " + html_file)
 
 def analyse(args):
     seq_file = args.input
