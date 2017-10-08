@@ -10,7 +10,6 @@ from Bio import SeqIO
 
 
 def writetoHTML(html_report):
-    print("Generating HTML report: ", html_report)
     html_report = open(html_report, 'w')
     current_dir = os.path.dirname(__file__)
     with open(current_dir + '/lib/template.html') as report:
@@ -28,6 +27,7 @@ def writetoHTML(html_report):
             except ValueError:
                 pass
     html_report.close()
+    print("HTML report successfully saved to " + html_report)
 
 def analyse(args):
     seq_file = args.input
@@ -35,6 +35,7 @@ def analyse(args):
     current_dir = os.path.dirname(__file__)
     analyseDataOUT = open(current_dir + '/lib/src/data.js', 'w')
     html_report = os.path.splitext(repeatsOutFile)[0] + '.html'
+    print("Generating HTML report. This may take a while..")
 
     defaultInfo = OD()
     defaultInfo['info'] = OD()

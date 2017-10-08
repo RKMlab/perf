@@ -4,7 +4,7 @@ from setuptools import setup, find_packages
 
 setup(
   name='perf_ssr',
-  version='0.2.3',
+  version='0.2.4',
   description='PERF is an exhaustive repeat finder',
   url='https://github.com/rkmlab/perf',
   keywords='ssr microsatellites',
