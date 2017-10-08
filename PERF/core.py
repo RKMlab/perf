@@ -2,7 +2,7 @@
 
 # pylint: disable=C0103, C0301
 
-from __future__ import print_function
+from __future__ import print_function, division
 import sys
 from os.path import splitext
 import argparse
@@ -20,7 +20,7 @@ def getArgs():
     """
     Parses command line arguments and returns them to the caller
     """
-    __version__ = 'v0.2.1'
+    __version__ = 'v0.2.3'
     parser = argparse.ArgumentParser()
     parser._action_groups.pop()
     required = parser.add_argument_group('Required arguments')
