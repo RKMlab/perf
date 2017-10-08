@@ -49,19 +49,21 @@ document.getElementById('bar-select').onchange = function() { barPlot('sort') };
 let barSetValues = [];
 let barPlotRepeats;
 let barRepeatSelect = new SlimSelect({ select: "#bar-repeats-sel", placeholder: 'Select Repeats', });
+
 barRepeatSelect.beforeOnChange = function(info) {
     if (info.length != 0) {
-        let allValues = _.map(info, function(d) { return d.value; });
+        let allValues = _.map(info, 'value');
         barSetValues = allValues;
         let lastValue = info[info.length - 1].value;
         if (lastValue == 'select-all') {
             for (let k in repeatSet) {
+                barSetValues = barSetValues.concat([`select-all-${k}`])
                 barSetValues = barSetValues.concat(repeatSet[k]);
                 barSetValues = _.uniq(barSetValues);
                 barRepeatSelect.set([]);
                 barRepeatSelect.set(barSetValues);
             }
-        } else if (lastValue.slice(0, 10) == 'select-all') {
+        } else if (lastValue.length > 10 && lastValue.slice(0, 10) == 'select-all') {
             let kmer = lastValue.slice(11, lastValue.length);
             barSetValues = allValues.concat(repeatSet[kmer]);
             barSetValues = _.uniq(barSetValues);
@@ -76,21 +78,40 @@ barRepeatSelect.beforeOnChange = function(info) {
 }
 
 barRepeatSelect.onChange = function(info) {
-    let currentValues = _.map(info, function(d) { return d.value; });
-    if (barSetValues.length - currentValues.length == 1) {
+    let currentValues = _.map(info, 'value');
+    if (currentValues.length == 0 && barSetValues.length - currentValues.length == 1 && barSetValues[0].slice(0, 10) == 'select-all') {
+        // pass;
+    } else if (barSetValues.length - currentValues.length == 1) {
         let removedValue = (_.difference(barSetValues, currentValues))[0];
         if (removedValue == 'select-all') {
             currentValues = [];
-        } else if (removedValue.slice(0, 10) == 'select-all') {
+            barRepeatSelect.set([]);
+            barRepeatSelect.set(currentValues);
+            barSetValues = currentValues;
+            barPlotRepeats = _.filter(barSetValues, function(d) {
+                return d.slice(0, 10) != 'select-all';
+            });
+            barPlot('repeat', barPlotRepeats);
+        } else if (removedValue.length > 10 && removedValue.slice(0, 10) == 'select-all') {
             let kmer = removedValue.slice(11, removedValue.length);
             let tempCurrentValues = _.difference(currentValues, repeatSet[kmer]);
             currentValues = tempCurrentValues;
+            barRepeatSelect.set([]);
+            barRepeatSelect.set(currentValues);
+            barSetValues = currentValues;
+            barPlotRepeats = _.filter(barSetValues, function(d) {
+                return d.slice(0, 10) != 'select-all';
+            });
+            barPlot('repeat', barPlotRepeats);
+        } else {
+            barSetValues = currentValues;
+            barPlotRepeats = _.filter(barSetValues, function(d) {
+                return d.slice(0, 10) != 'select-all';
+            });
+            barPlot('repeat', barPlotRepeats);
         }
-        barRepeatSelect.set([]);
-        barRepeatSelect.set(currentValues);
-        barSetValues = currentValues;
-        barPlotRepeats = _.filter(barSetValues, function(d) { return d.slice(0, 10) != 'select-all'; });
-        barPlot('repeat', barPlotRepeats);
+    } else if (currentValues.length == 0) {
+        //pass;
     }
 }
 

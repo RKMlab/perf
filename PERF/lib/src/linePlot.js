@@ -74,19 +74,18 @@ let lineRepeatSelect = new SlimSelect({
 
 lineRepeatSelect.beforeOnChange = function(info) {
     if (info.length != 0) {
-        let allValues = _.map(info, function(d) {
-            return d.value;
-        })
+        let allValues = _.map(info, 'value')
         lineSetValues = allValues;
         let lastValue = info[info.length - 1].value
         if (lastValue == 'select-all') {
             for (let k in repeatSet) {
+                lineSetValues = lineSetValues.concat([`select-all-${k}`])
                 lineSetValues = lineSetValues.concat(repeatSet[k]);
                 lineSetValues = _.uniq(lineSetValues);
                 lineRepeatSelect.set([]);
                 lineRepeatSelect.set(lineSetValues);
             }
-        } else if (lastValue.slice(0, 10) == 'select-all') {
+        } else if (lastValue.length > 10 && lastValue.slice(0, 10) == 'select-all') {
             let kmer = lastValue.slice(11, lastValue.length)
             lineSetValues = allValues.concat(repeatSet[kmer]);
             lineSetValues = _.uniq(lineSetValues);
@@ -101,24 +100,42 @@ lineRepeatSelect.beforeOnChange = function(info) {
 }
 
 lineRepeatSelect.onChange = function(info) {
-    let currentValues = _.map(info, function(d) { return d.value; })
-    if (lineSetValues.length - currentValues.length == 1) {
+    let currentValues = _.map(info, 'value');
+    if (currentValues.length == 0 && lineSetValues.length - currentValues.length == 1 && lineSetValues[0].slice(0, 10) == 'select-all') {
+        //pass
+    } else if (lineSetValues.length - currentValues.length == 1) {
         let removedValue = (_.difference(lineSetValues, currentValues))[0];
         if (removedValue == 'select-all') {
             currentValues = [];
-        } else if (removedValue.slice(0, 10) == 'select-all') {
-            let kmer = removedValue.slice(11, removedValue.length)
+            lineRepeatSelect.set([]);
+            lineRepeatSelect.set(currentValues);
+            lineSetValues = currentValues;
+            linePlotRepeats = _.filter(lineSetValues, function(d) {
+                return d.slice(0, 10) != 'select-all';
+            });
+            linePlot('repeat', linePlotRepeats);
+        } else if (removedValue.length > 10 && removedValue.slice(0, 10) == 'select-all') {
+            let kmer = removedValue.slice(11, removedValue.length);
             let tempCurrentValues = _.difference(currentValues, repeatSet[kmer]);
             currentValues = tempCurrentValues;
+            lineRepeatSelect.set([]);
+            lineRepeatSelect.set(currentValues);
+            lineSetValues = currentValues;
+            linePlotRepeats = _.filter(lineSetValues, function(d) {
+                return d.slice(0, 10) != 'select-all';
+            });
+            linePlot(linePlotRepeats);
+        } else {
+            lineSetValues = currentValues;
+            linePlotRepeats = _.filter(lineSetValues, function(d) {
+                return d.slice(0, 10) != 'select-all';
+            });
+            linePlot(linePlotRepeats);
         }
-        lineRepeatSelect.set([])
-        lineRepeatSelect.set(currentValues)
-        lineSetValues = currentValues;
-        linePlotRepeats = _.filter(lineSetValues, function(d) {
-            return d.slice(0, 10) != 'select-all';
-        });
-        linePlot(linePlotRepeats)
+    } else if (currentValues.length == 0) {
+        //pass;
     }
 }
+
 document.getElementById('min-length').oninput = function() { linePlot(linePlotRepeats) };
 document.getElementById('max-length').oninput = function() { linePlot(linePlotRepeats) };

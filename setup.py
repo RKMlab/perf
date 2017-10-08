@@ -3,8 +3,8 @@
 from setuptools import setup, find_packages
 
 setup(
-  name='PERF',
-  version='0.2.0',
+  name='perf_ssr',
+  version='0.2.1',
   description='PERF is an exhaustive repeat finder',
   url='https://github.com/rkmlab/perf',
   keywords='ssr microsatellites',
@@ -16,5 +16,5 @@ setup(
   entry_points={
     'console_scripts': ['PERF=PERF.core:main']
   },
-  include_package_data=True # change path according to package name in MANIFEST.in
+  include_package_data=True, # change path according to package name in MANIFEST.in
 )
