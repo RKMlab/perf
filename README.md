@@ -115,7 +115,7 @@ YHet    137144    137466    AAGAC   322     -       64      CTTGT
 ### `-a or --analyze`
 **Expects:** *None*<br>
 **Default:** *False*<br>
-In addition to the default tab-separated output, PERF can also generate a fully interactive HTML report for easy downstream analysis of the repeat data. The filename will be the same prefix as that of the main output. For example, if the input filename was `my_seq.fa`, the analysis report will be  `my_seq_perf.html`. An example HTML report, generated from the repeat data of *Homo sapiens*, can be accessed [here](https://raw.githubusercontent.com/RKMlab/perf/html-report/test_data/Homo_sapiens_perf.html) (Right click -> Save As).
+In addition to the default tab-separated output, PERF can also generate a fully interactive HTML report for easy downstream analysis of the repeat data. The filename will be the same prefix as that of the main output. For example, if the input filename was `my_seq.fa`, the analysis report will be  `my_seq_perf.html`. An example HTML report, generated from the repeat data of *Homo sapiens* (build hg19), can be accessed [here](https://raw.githubusercontent.com/RKMlab/perf/html-report/test_data/Human_hg19_perf.html) (Right click -> Save As).
 
 ### `-l or --min-length`
 **Expects:** *INTEGER*<br>

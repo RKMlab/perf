@@ -20,7 +20,7 @@ def getArgs():
     """
     Parses command line arguments and returns them to the caller
     """
-    __version__ = 'v0.2.3'
+    __version__ = 'v0.2.4'
     parser = argparse.ArgumentParser()
     parser._action_groups.pop()
     required = parser.add_argument_group('Required arguments')
