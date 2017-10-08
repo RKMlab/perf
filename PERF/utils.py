@@ -1,7 +1,7 @@
 #! /usr/bin/env python
 # pylint: disable=C0111, C0301
 
-from __future__ import print_function
+from __future__ import print_function, division
 import sys
 from itertools import product
 from tqdm import tqdm
