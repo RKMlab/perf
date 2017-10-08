@@ -159,7 +159,6 @@ def analyse(args):
     defaultInfo['info']['repDensityByBases'] = round((totalRepBases/totalBases)*1000000, 2)
     defaultInfo['info']['longestRepeats'] = []
     defaultInfo['info']['mostRepeatUnits'] = []
-    print(defaultInfo['info'], file=sys.stdout)
     for a in longestLengths:
         testDict = {'seq': a[0], 'start': a[1], 'end': a[2], 'repClass': a[3], 'repLength': a[4], 'repOri': a[5], 'repUnit': a[6], 'actualRep': a[7]}
         defaultInfo['info']['longestRepeats'].append(testDict)
@@ -183,6 +182,5 @@ def analyse(args):
             seqInfo['bpDens'] = "0.0"
         defaultInfo['info']['seqInfo'].append(seqInfo)
     print('const data =', json.dumps(defaultInfo), file=analyseDataOUT)
-    # print('const data =', json.dumps(defaultInfo), file=sys.stdout)
     analyseDataOUT.close()
     writetoHTML(html_report)
