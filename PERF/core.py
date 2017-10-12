@@ -4,6 +4,7 @@
 
 from __future__ import print_function, division
 import sys
+from math import inf
 from os.path import splitext
 import argparse
 from tqdm import tqdm
@@ -13,8 +14,8 @@ if sys.version_info.major == 2:
     from utils import generate_repeats, get_ssrs, build_rep_set
     from analyse import analyse
 elif sys.version_info.major == 3:
-    from .utils import generate_repeats, get_ssrs, build_rep_set
-    from .analyse import analyse
+    from utils import generate_repeats, get_ssrs, build_rep_set
+    from analyse import analyse
 
 def getArgs():
     """
@@ -34,6 +35,8 @@ def getArgs():
     optional.add_argument('-rep', '--repeats', type=argparse.FileType('r'), metavar='<FILE>', help='File with list of repeats (Not allowed with -m and/or -M)')
     optional.add_argument('-m', '--min-motif-size', type=int, metavar='<INT>', help='Minimum size of a repeat motif in bp (Not allowed with -rep)')
     optional.add_argument('-M', '--max-motif-size', type=int, metavar='<INT>', help='Maximum size of a repeat motif in bp (Not allowed with -rep)')
+    optional.add_argument('-s', '--min-seq-length', type=int, metavar = '<INT>', default=0, help='Minimum size of sequence length for consideration (in bp)')
+    optional.add_argument('-S', '--max-seq-length', type=float, metavar='<FLOAT>', default=inf, help='Maximum size of sequence length for consideration (in bp)')
     optional.add_argument('--version', action='version', version='PERF ' + __version__)
 
     args = parser.parse_args()
@@ -59,6 +62,8 @@ def getSSRNative(args):
     out_file = args.output
     repeats_info = build_rep_set(repeat_file, length_cutoff=length_cutoff)
     repeat_set = set(repeats_info.keys())
+    min_seq_length = args.min_seq_length
+    max_seq_length = args.max_seq_length
     print('Using length cutoff of %d' % (length_cutoff), file=sys.stderr)
 
     num_records = 0
@@ -70,7 +75,8 @@ def getSSRNative(args):
     with open(seq_file, "rt") as handle:
         records = SeqIO.parse(handle, 'fasta')
         for record in tqdm(records, total=num_records):
-            get_ssrs(record, repeats_info, repeat_set, out_file)
+            if  min_seq_length <= len(record.seq) <= max_seq_length:
+                get_ssrs(record, repeats_info, repeat_set, out_file)
     out_file.close()
 
 
@@ -84,6 +90,8 @@ def getSSR_units(args, unit_cutoff):
     out_file = args.output
     repeats_info = build_rep_set(repeat_file, unit_cutoff=unit_cutoff)
     repeat_set = set(repeats_info.keys())
+    min_seq_length = args.min_seq_length
+    max_seq_length = args.max_seq_length
     print('Using unit cutoff of ', unit_cutoff, file=sys.stderr)
 
     num_records = 0
@@ -95,7 +103,8 @@ def getSSR_units(args, unit_cutoff):
     with open(seq_file, "rt") as handle:
         records = SeqIO.parse(handle, 'fasta')
         for record in tqdm(records, total=num_records):
-            get_ssrs(record, repeats_info, repeat_set, out_file)
+            if min_seq_length <= len(record.seq) <= max_seq_length:
+                get_ssrs(record, repeats_info, repeat_set, out_file)
     out_file.close()
 
 
@@ -110,7 +119,6 @@ def main():
         min_motif_size = args.min_motif_size
         max_motif_size = args.max_motif_size
         args.repeats = generate_repeats(min_motif_size, max_motif_size)
-
 
     # User specifies minimum length
     if args.min_length:
