@@ -11,10 +11,10 @@ from tqdm import tqdm
 from Bio import SeqIO
 
 if sys.version_info.major == 2:
-    from utils import generate_repeats, get_ssrs, build_rep_set
+    from utils import generate_repeats, get_ssrs, build_rep_set, univset
     from analyse import analyse
 elif sys.version_info.major == 3:
-    from utils import generate_repeats, get_ssrs, build_rep_set
+    from utils import generate_repeats, get_ssrs, build_rep_set, univset
     from analyse import analyse
 
 def getArgs():
@@ -37,6 +37,9 @@ def getArgs():
     optional.add_argument('-M', '--max-motif-size', type=int, metavar='<INT>', help='Maximum size of a repeat motif in bp (Not allowed with -rep)')
     optional.add_argument('-s', '--min-seq-length', type=int, metavar = '<INT>', default=0, help='Minimum size of sequence length for consideration (in bp)')
     optional.add_argument('-S', '--max-seq-length', type=float, metavar='<FLOAT>', default=inf, help='Maximum size of sequence length for consideration (in bp)')
+    seqid_group = optional.add_mutually_exclusive_group()
+    seqid_group.add_argument('-f', '--filter-seq-ids', metavar='<FILE>')
+    seqid_group.add_argument('-F', '--target-seq-ids', metavar='<FILE>')
     optional.add_argument('--version', action='version', version='PERF ' + __version__)
 
     args = parser.parse_args()
@@ -51,6 +54,27 @@ def getArgs():
         args.output = open(splitext(args.input)[0] + '_perf.tsv', 'w')
     return args
 
+def get_seqids_group(filter_seq_ids, target_seq_ids):
+    target_ids = univset()
+    if filter_seq_ids:
+        target_ids = univset()
+        filter_ids = []
+        with open(filter_seq_ids) as fh:
+            for line in fh:
+                line = line.strip()
+                filter_ids.append(line)
+        target_ids = target_ids - set(filter_ids)
+    elif target_seq_ids:
+        target_ids = []
+        with open(target_seq_ids) as fh:
+            for line in fh:
+                line = line.strip()
+                target_ids.append(line)
+        target_ids = set(target_ids)
+
+    print(target_ids, filter_ids)
+    return target_ids
+
 def getSSRNative(args):
     """
     Identifies microsatellites using native string matching.
@@ -64,6 +88,7 @@ def getSSRNative(args):
     repeat_set = set(repeats_info.keys())
     min_seq_length = args.min_seq_length
     max_seq_length = args.max_seq_length
+    seqids_set = get_seqids_group(args.filter_seq_ids, args.target_seq_ids)
     print('Using length cutoff of %d' % (length_cutoff), file=sys.stderr)
 
     num_records = 0
@@ -75,7 +100,7 @@ def getSSRNative(args):
     with open(seq_file, "rt") as handle:
         records = SeqIO.parse(handle, 'fasta')
         for record in tqdm(records, total=num_records):
-            if  min_seq_length <= len(record.seq) <= max_seq_length:
+            if  (min_seq_length <= len(record.seq) <= max_seq_length) and record.id in seqids_set['target']:
                 get_ssrs(record, repeats_info, repeat_set, out_file)
     out_file.close()
 
@@ -92,6 +117,7 @@ def getSSR_units(args, unit_cutoff):
     repeat_set = set(repeats_info.keys())
     min_seq_length = args.min_seq_length
     max_seq_length = args.max_seq_length
+    seqids_set = get_seqids_group(args.filter_seq_ids, args.target_seq_ids)
     print('Using unit cutoff of ', unit_cutoff, file=sys.stderr)
 
     num_records = 0
@@ -103,7 +129,7 @@ def getSSR_units(args, unit_cutoff):
     with open(seq_file, "rt") as handle:
         records = SeqIO.parse(handle, 'fasta')
         for record in tqdm(records, total=num_records):
-            if min_seq_length <= len(record.seq) <= max_seq_length:
+            if  (min_seq_length <= len(record.seq) <= max_seq_length) and record.id in seqids_set['target']:
                 get_ssrs(record, repeats_info, repeat_set, out_file)
     out_file.close()
 
