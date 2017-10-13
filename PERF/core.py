@@ -4,18 +4,20 @@
 
 from __future__ import print_function, division
 import sys
-from math import inf
 from os.path import splitext
 import argparse
 from tqdm import tqdm
 from Bio import SeqIO
+from collections import Counter
 
 if sys.version_info.major == 2:
-    from utils import generate_repeats, get_ssrs, build_rep_set, univset
+    from utils import generate_repeats, get_ssrs, build_rep_set, univset, rawSeqCount
     from analyse import analyse
 elif sys.version_info.major == 3:
-    from utils import generate_repeats, get_ssrs, build_rep_set, univset
+    from utils import generate_repeats, get_ssrs, build_rep_set, univset, rawSeqCount
     from analyse import analyse
+
+inf = float('inf')
 
 def getArgs():
     """
@@ -54,7 +56,7 @@ def getArgs():
         args.output = open(splitext(args.input)[0] + '_perf.tsv', 'w')
     return args
 
-def get_seqids_group(filter_seq_ids, target_seq_ids):
+def get_targetids(filter_seq_ids, target_seq_ids):
     target_ids = univset()
     if filter_seq_ids:
         target_ids = univset()
@@ -72,7 +74,6 @@ def get_seqids_group(filter_seq_ids, target_seq_ids):
                 target_ids.append(line)
         target_ids = set(target_ids)
 
-    print(target_ids, filter_ids)
     return target_ids
 
 def getSSRNative(args):
@@ -88,19 +89,14 @@ def getSSRNative(args):
     repeat_set = set(repeats_info.keys())
     min_seq_length = args.min_seq_length
     max_seq_length = args.max_seq_length
-    seqids_set = get_seqids_group(args.filter_seq_ids, args.target_seq_ids)
+    target_ids = get_targetids(args.filter_seq_ids, args.target_seq_ids)
     print('Using length cutoff of %d' % (length_cutoff), file=sys.stderr)
 
-    num_records = 0
-    # with open(seq_file, "rt") as handle:
-    #     records = SeqIO.parse(handle, 'fasta')
-    #     for r in records:
-    #         num_records += 1
-
+    num_records = rawSeqCount(seq_file)
     with open(seq_file, "rt") as handle:
         records = SeqIO.parse(handle, 'fasta')
         for record in tqdm(records, total=num_records):
-            if  (min_seq_length <= len(record.seq) <= max_seq_length) and record.id in seqids_set['target']:
+            if  min_seq_length <= len(record.seq) <= max_seq_length and record.id in target_ids:
                 get_ssrs(record, repeats_info, repeat_set, out_file)
     out_file.close()
 
@@ -118,14 +114,9 @@ def getSSR_units(args, unit_cutoff):
     min_seq_length = args.min_seq_length
     max_seq_length = args.max_seq_length
     seqids_set = get_seqids_group(args.filter_seq_ids, args.target_seq_ids)
+    num_records = rawSeqCount(seq_file)
+
     print('Using unit cutoff of ', unit_cutoff, file=sys.stderr)
-
-    num_records = 0
-    # with open(seq_file, "rt") as handle:
-    #     records = SeqIO.parse(handle, 'fasta')
-    #     for r in records:
-    #         num_records += 1
-
     with open(seq_file, "rt") as handle:
         records = SeqIO.parse(handle, 'fasta')
         for record in tqdm(records, total=num_records):
@@ -177,7 +168,7 @@ def main():
     elif args.min_length is None and args.min_units is None:
         args.min_length = 12
         getSSRNative(args)
-
+           
     # Specifies to generate a HTML report
     if args.analyse:
         analyse(args)

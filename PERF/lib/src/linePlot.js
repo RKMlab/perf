@@ -1,25 +1,37 @@
 /*-- LINE PLOT ------------------------------------------------------------------------------*/
 
-const lineDatum = function(data, repeats, minL, maxL) {
+const lineDatum = function(data, xdata, repeats, minL, maxL) {
     let datum = [];
-    for (let r in repeats) {
-        let repeat = repeats[r];
-        datum.push({
-            name: repeat,
-            data: data[repeat].slice(minL - 12, maxL - 12 + 1)
-        })
+    if (xdata == 0) {
+        for (let r in repeats) {
+            let repeat = repeats[r];
+            datum.push({
+                name: repeat,
+                data: data['len'][repeat].slice(minL - minLength, maxL - minLength + 1)
+            })
+        }
+    } else {
+        for (let r in repeats) {
+            let repeat = repeats[r];
+            datum.push({
+                name: repeat,
+                data: data['unit'][repeat].slice(minL - minUnits, maxL - minUnits + 1)
+            })
+        }
     }
     return datum
 }
 
-let a = _.flatMap(plotInfo, function(d) { return d.length + 12 - 1; });
-document.getElementById('max-length').value = _.max(a);
+let a = _.flatMap(plotInfo['len'], function(d) { return d.length + minLength - 1; });
+document.getElementById('max-linex').value = _.max(a);
 
 const linePlot = function(repeats) {
-    const maxL = document.getElementById('max-length').value;
-    const minL = document.getElementById('min-length').value;
-    console.log()
-    let plotData = lineDatum(plotInfo, repeats, minL, maxL);
+    const maxL = parseInt(document.getElementById('max-linex').value);
+    const minL = parseInt(document.getElementById('min-linex').value);
+    const xdata = document.getElementById('line-select').selectedIndex;
+    let xLabel;
+    if (xdata == 0) { xLabel = 'Sequence length(bp)'; } else { xLabel = 'Repeat Units'; }
+    plotData = lineDatum(plotInfo, xdata, repeats, minL, maxL);
 
     Highcharts.chart('line-plot-svg', {
         chart: {
@@ -39,7 +51,7 @@ const linePlot = function(repeats) {
 
         xAxis: {
             title: {
-                text: 'Sequence length(bp)'
+                text: xLabel
             },
             labels: {
                 format: '{value:.0f}'
@@ -110,10 +122,8 @@ lineRepeatSelect.onChange = function(info) {
             lineRepeatSelect.set([]);
             lineRepeatSelect.set(currentValues);
             lineSetValues = currentValues;
-            linePlotRepeats = _.filter(lineSetValues, function(d) {
-                return d.slice(0, 10) != 'select-all';
-            });
-            linePlot('repeat', linePlotRepeats);
+            linePlotRepeats = [];
+            linePlot(linePlotRepeats);
         } else if (removedValue.length > 10 && removedValue.slice(0, 10) == 'select-all') {
             let kmer = removedValue.slice(11, removedValue.length);
             let tempCurrentValues = _.difference(currentValues, repeatSet[kmer]);
@@ -137,5 +147,13 @@ lineRepeatSelect.onChange = function(info) {
     }
 }
 
-document.getElementById('min-length').oninput = function() { linePlot(linePlotRepeats) };
-document.getElementById('max-length').oninput = function() { linePlot(linePlotRepeats) };
+document.getElementById('min-linex').oninput = function() { linePlot(linePlotRepeats) };
+document.getElementById('max-linex').oninput = function() { linePlot(linePlotRepeats) };
+document.getElementById('line-select').onchange = function() {
+    if (this.selectedIndex == 0) {
+        document.getElementById('min-linex').value = minLength
+    } else {
+        document.getElementById('min-linex').value = minUnits
+    }
+    linePlot(linePlotRepeats);
+};

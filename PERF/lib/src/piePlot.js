@@ -57,7 +57,7 @@ const piePlot = function(repeats) {
             }
         }
     }
-    let plotData = pieDatum(plotInfo, dataType, repeats, lenGroup);
+    let plotData = pieDatum(plotInfo['len'], dataType, repeats, lenGroup);
     Highcharts.chart('pie-plot-svg', {
         chart: {
             plotBackgroundColor: null,

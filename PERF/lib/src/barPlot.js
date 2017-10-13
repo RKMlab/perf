@@ -22,7 +22,7 @@ const barPlot = function(selectionType, repeats) {
     if (selectionType == 'sort') {
         const numBars = document.getElementById('bar-num').value;
         const sort = document.getElementById('bar-select').selectedIndex;
-        plotData = barDatum(plotInfo, numBars, sort);
+        plotData = barDatum(plotInfo['len'], numBars, sort);
     } else if (selectionType == 'repeat') {
         const barSortRadios = document.getElementsByName('bar-sort');
         let repeatSort;
@@ -30,7 +30,7 @@ const barPlot = function(selectionType, repeats) {
             let radio = barSortRadios[i];
             if (radio.tagName == 'INPUT') { if (radio.checked) { repeatSort = radio.value; } }
         }
-        plotData = barDatum(plotInfo, 0, 0, repeats, repeatSort);
+        plotData = barDatum(plotInfo['len'], 0, 0, repeats, repeatSort);
     }
 
     Highcharts.chart('bar-plot-svg', {

@@ -4,13 +4,15 @@ const sizeSuffix = function(size) {
 
 let numPrefixObj = { 1: 'Monomer', 2: 'Dimer', 3: 'Trimer', 4: 'Tetramer', 5: 'Pentamer', 6: 'Hexamer', 7: 'Septamer', 8: 'Octamer', 9: 'Enneamer', 10: 'Decamer' }
 let plotInfo = data['info']['plotInfo'];
-let kmerLengths = _.uniq(_.map(Object.keys(plotInfo), function(o) { return o.length; })).sort();
+let minLength = parseInt(data['info']['minLength']);
+let minUnits = parseInt(data['info']['minUnits']);
+let kmerLengths = _.uniq(_.map(Object.keys(plotInfo['len']), function(o) { return o.length; })).sort();
 let kMers = _.map(kmerLengths, function(o) { if (_.map(Object.keys(numPrefixObj), parseFloat).indexOf(o) != -1) { return numPrefixObj[o] } else { return o + '-kmer' } });
 let kmerObj = {};
 for (let k in kMers) { kmerObj[kmerLengths[k]] = kMers[k]; }
 let repeatSet = {};
 for (let k in kMers) { repeatSet[kMers[k]] = []; }
-for (let repeat in plotInfo) { repeatSet[kmerObj[repeat.length]].push(repeat); }
+for (let repeat in plotInfo['len']) { repeatSet[kmerObj[repeat.length]].push(repeat); }
 for (let group in repeatSet) { repeatSet[group].sort(); }
 let basicInfoKeys = ['name', 'genomeSize', 'GC', 'numSeq', 'numRepClass', 'totalRepBases', 'totalRepFreq', 'percentGenomeCovered', 'repDensityByFreq', 'repDensityByBases'];
 for (let k in basicInfoKeys) {

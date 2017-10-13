@@ -215,15 +215,22 @@
                         <div class="col-sm-12 col-md-6 col-lg-6">
                             <form style="margin: 0px !important; padding: 5px !important; padding-bottom: 14px !important">
                                 <fieldset>
-                                    <legend style="font-size: 1em">Length Range</legend>
+                                    <legend style="font-size: 1em">Range</legend>
                                     <div class="row">
-                                        <div class="col-sm-6 col-md-6 col-lg-6">
-                                            <label for="min-length">Min :</label>
-                                            <input id="min-length" type="number" value="12" min="12" style="padding: 3px !important; width: 60%"></input>
+                                        <div class="col-sm-4 col-md-4 col-lg-4">
+                                            <b>X-axis: </b>
+                                            <select id="line-select" style="padding-top: 3px; padding-bottom: 3px">
+                                                <option value="1" selected>Repeat length</option>
+                                                <option value="0">Repeat units</option>
+                                            </select>
                                         </div>
-                                        <div class="col-sm-6 col-md-6 col-lg-6">
-                                            <label for="max-length">Max:</label>
-                                            <input id="max-length" type="number" value="12" min="12" style="padding: 3px !important; width: 60%"></input>
+                                        <div class="col-sm-4 col-md-4 col-lg-4">
+                                            <label for="min-linex">Min :</label>
+                                            <input id="min-linex" type="number" value="12" min="12" style="padding: 3px !important; width: 60%"></input>
+                                        </div>
+                                        <div class="col-sm-4 col-md-4 col-lg-4">
+                                            <label for="max-linex">Max:</label>
+                                            <input id="max-linex" type="number" value="12" min="12" style="padding: 3px !important; width: 60%"></input>
                                         </div>
                                     </div>
                                 </fieldset>

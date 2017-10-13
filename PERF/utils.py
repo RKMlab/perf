@@ -3,7 +3,7 @@
 
 from __future__ import print_function, division
 import sys
-from itertools import product
+from itertools import product, takewhile, repeat
 from tqdm import tqdm
 
 
@@ -34,6 +34,12 @@ def get_cycles(string):
     for i in range(len(string)):
         cycles.append(string[i:] + string[:i])
     return cycles
+
+def rawSeqCount(filename):
+    f = open(filename, 'rb')
+    bufgen = takewhile(lambda x: x, (f.read(1024*1024) for _ in repeat(None)))
+    return sum( buf.count(b'>') for buf in bufgen if buf )
+
 
 def generate_repeats(min_size, max_size):
     """Generates all possible motifs for repeats in a given length range"""
@@ -134,7 +140,7 @@ def build_rep_set(repeat_file, **kwargs):
 def get_ssrs(seq_record, repeats_info, repeats, out_file):
     repeat_lengths = repeats_info['rep_lengths'] # All possible length cutoffs
     # motif_fallback = repeats_info['fallback']
-    print("\nProcessing %s" % (seq_record.id), file=sys.stderr)
+    # print("\nProcessing %s" % (seq_record.id), file=sys.stderr)
     input_seq = str(seq_record.seq).upper()
     input_seq_length = len(input_seq)
     for length_cutoff in repeat_lengths:

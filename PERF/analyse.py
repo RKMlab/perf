@@ -4,7 +4,6 @@ from __future__ import print_function, division
 import sys
 import os
 import json
-from collections import OrderedDict as OD
 from collections import Counter
 from Bio import SeqIO
 
@@ -36,9 +35,9 @@ def analyse(args):
     analyseDataOUT = open(current_dir + '/lib/src/data.js', 'w')
     html_report = os.path.splitext(repeatsOutFile)[0] + '.html'
     print("Generating HTML report. This may take a while..")
-
-    defaultInfo = OD()
-    defaultInfo['info'] = OD()
+    inf = float('inf')
+    defaultInfo = {}
+    defaultInfo['info'] = {}
     defaultInfo['info']['name'] = seq_file
     defaultInfo['info']['genomeSize'] = 0
     defaultInfo['info']['numSeq'] = 0
@@ -64,14 +63,16 @@ def analyse(args):
         defaultInfo['info']['numSeq'] = totalSeq
     totalRepBases = 0
     totalRepFreq = 0
-    repFreqByClass = {}
-    repBasesByClass = {}
+    repFreqByClass = []
+    repBasesByClass = []
     chrFreq = {}
     chrBases = {}
-    plotData = {}
-    plotInfo = {}
+    plotData = {'replen': {}, 'repunit': {}}
+    plotInfo = {'len': {}, 'unit': {}}
     longestLengths = [['seq', 'start', 'stop', 'repClass', 0, '+', 0, 'actualrep']]*100
     mostUnits = [['seq', 'start', 'stop', 'repClass', 0, '+', 0, 'actualrep']]*100
+    minLength = inf
+    minUnits = inf
     with open(repeatsOutFile, 'r') as repFile:
         for line in repFile:
             line = line.strip()
@@ -90,14 +91,25 @@ def analyse(args):
             repUnit = fields[6]
             actualRepeat = fields[7]
 
-            if repClass not in plotData:
-                plotData[repClass] = {}
-                plotData[repClass][repLength] = 1
-            elif repClass in plotData:
-                if repLength not in plotData[repClass]:
-                    plotData[repClass][repLength] = 1
-                elif repLength in plotData[repClass]:
-                    plotData[repClass][repLength] += 1
+            if minUnits > repUnit:
+                minUnits = repUnit
+            if minLength > repLength:
+                minLength = repLength
+
+            if repClass not in plotData['replen']:
+                plotData['replen'][repClass] = {}
+                plotData['replen'][repClass][repLength] = 1
+                plotData['repunit'][repClass] = {}
+                plotData['repunit'][repClass][repUnit] = 1
+            elif repClass in plotData['replen']:
+                if repLength not in plotData['replen'][repClass]:
+                    plotData['replen'][repClass][repLength] = 1
+                elif repLength in plotData['replen'][repClass]:
+                    plotData['replen'][repClass][repLength] += 1
+                if repUnit not in plotData['repunit'][repClass]:
+                    plotData['repunit'][repClass][repUnit] = 1
+                elif repUnit in plotData['repunit'][repClass]:
+                    plotData['repunit'][repClass][repUnit] += 1
 
             totalRepBases += repLength
             totalRepFreq += 1
@@ -115,39 +127,27 @@ def analyse(args):
                     longestLengths[-1] = fields
             mostUnits.sort(key=lambda x: x[6])
             mostUnits.reverse()
-            try:
-                repFreqByClass[repClass] += 1
-                repBasesByClass[repClass] += repLength
-            except KeyError:
-                repFreqByClass[repClass] = 1
-                repBasesByClass[repClass] = repLength
-            try:
-                chrFreq[seq] += 1
-                chrBases[seq] += repLength
-            except KeyError:
-                chrFreq[seq] = 1
-                chrBases[seq] = repLength
 
-    temp = []
-    for a in repFreqByClass:
-        Obj = {'name': a, 'value': repFreqByClass[a]}
-        temp.append(Obj)
-    repFreqByClass = temp
-    temp = []
-    for a in repBasesByClass:
-        Obj = {'name': a, 'value': repBasesByClass[a]}
-        temp.append(Obj)
-    repBasesByClass = temp
-    temp = []
-    for o in plotData:
-        freqs = []
-        lengths = sorted(list(plotData[o].keys()))
-        for i in range(min(lengths), max(lengths) + 1):
+    for rep in plotData['replen']:
+        freqs = list(plotData['replen'][rep].values())
+        repFreqByClass.append({ 'name': rep, 'value': sum(freqs) })
+        repBasesByClass.append({ 'name': rep, 'value': sum(list(map(lambda x: x*(minLength + freqs.index(x)), freqs))) })
+        lenfreqs = []
+        unitfreqs = []
+        lengths = sorted(list(plotData['replen'][rep].keys()))
+        units = sorted(list(plotData['repunit'][rep].keys()))
+        for i in range(minLength, max(lengths) + 1):
             try:
-                freqs.append(plotData[o][i])
+                lenfreqs.append(plotData['replen'][rep][i])
             except KeyError:
-                freqs.append(0)
-        plotInfo[o] = freqs
+                lenfreqs.append(0)
+        for i in range(minUnits, max(units) + 1):
+            try:
+                unitfreqs.append(plotData['repunit'][rep][i])
+            except KeyError:
+                unitfreqs.append(0)
+        plotInfo['len'][rep] = lenfreqs
+        plotInfo['unit'][rep] = unitfreqs
 
     defaultInfo['info']['plotInfo'] = plotInfo
     defaultInfo['info']['numRepClass'] = len(repFreqByClass)
@@ -158,6 +158,8 @@ def analyse(args):
     defaultInfo['info']['percentGenomeCovered'] = str(round((totalRepBases/totalBases)*100, 2)) + "%"
     defaultInfo['info']['repDensityByFreq'] = round((totalRepFreq/totalBases)*1000000, 2)
     defaultInfo['info']['repDensityByBases'] = round((totalRepBases/totalBases)*1000000, 2)
+    defaultInfo['info']['minLength'] = minLength
+    defaultInfo['info']['minUnits'] = minUnits
     defaultInfo['info']['longestRepeats'] = []
     defaultInfo['info']['mostRepeatUnits'] = []
     for a in longestLengths:
