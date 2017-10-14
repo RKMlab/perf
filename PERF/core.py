@@ -18,6 +18,8 @@ elif sys.version_info.major == 3:
     from analyse import analyse
 
 inf = float('inf')
+allLengths = []
+allUnits = []
 
 def getArgs():
     """
@@ -81,6 +83,9 @@ def getSSRNative(args):
     Identifies microsatellites using native string matching.
     As the entire sequence is scanned in a single iteration, the speed is vastly improved
     """
+    global allLengths
+    global allUnits
+
     length_cutoff = args.min_length
     repeat_file = args.repeats
     seq_file = args.input
@@ -97,8 +102,20 @@ def getSSRNative(args):
         records = SeqIO.parse(handle, 'fasta')
         for record in tqdm(records, total=num_records):
             if  min_seq_length <= len(record.seq) <= max_seq_length and record.id in target_ids:
-                get_ssrs(record, repeats_info, repeat_set, out_file)
+                ssr_lengths, ssr_units = get_ssrs(record, repeats_info, repeat_set, out_file)
+                allLengths += ssr_lengths
+                allUnits += ssr_units
     out_file.close()
+    allLengths = sorted(allLengths, reverse=True)
+    allUnits = sorted(allUnits, reverse=True)
+    try:
+        allLengths = allLengths[99]
+    except IndexError:
+        allLengths = allLengths[-1]
+    try:
+        allUnits = allUnits[99]
+    except IndexError:
+        allUnits = allUnits[-1]        
 
 
 def getSSR_units(args, unit_cutoff):
@@ -130,6 +147,9 @@ def main():
     Main function of the script
     """
     args = getArgs()
+
+    global allLengths
+    global allUnits
 
     # User specifies motif size range instead of giving a repeats file
     if args.repeats is None:
@@ -171,7 +191,7 @@ def main():
            
     # Specifies to generate a HTML report
     if args.analyse:
-        analyse(args)
+        analyse(args, allLengths, allUnits)
 
 
 if __name__ == '__main__':

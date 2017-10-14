@@ -139,6 +139,8 @@ def build_rep_set(repeat_file, **kwargs):
 
 def get_ssrs(seq_record, repeats_info, repeats, out_file):
     repeat_lengths = repeats_info['rep_lengths'] # All possible length cutoffs
+    ssr_lengths = []
+    ssr_units = []
     # motif_fallback = repeats_info['fallback']
     # print("\nProcessing %s" % (seq_record.id), file=sys.stderr)
     input_seq = str(seq_record.seq).upper()
@@ -162,6 +164,8 @@ def get_ssrs(seq_record, repeats_info, repeats, out_file):
                         match = False
                         match_length = sub_stop - sub_start
                         num_units = int(match_length/motif_length)
+                        ssr_lengths.append(match_length)
+                        ssr_units.append(num_units)
                         print(seq_record.id, sub_start, sub_stop, repeats_info[subseq]['class'], match_length, repeats_info[subseq]['strand'], num_units, subseq[:motif_length], sep="\t", file=out_file)
                         sub_start = sub_stop - fallback
                     elif input_seq[j] == repeat_seq[i]:
@@ -173,10 +177,13 @@ def get_ssrs(seq_record, repeats_info, repeats, out_file):
                         match = False
                         match_length = sub_stop - sub_start
                         num_units = int(match_length/motif_length)
+                        ssr_lengths.append(match_length)
+                        ssr_units.append(num_units)
                         print(seq_record.id, sub_start, sub_stop, repeats_info[subseq]['class'], match_length, repeats_info[subseq]['strand'], num_units, subseq[:motif_length], sep="\t", file=out_file)
                         sub_start = sub_stop - fallback
             else:
                 sub_start += 1
+    return ssr_lengths, ssr_units
 
 class univset(object):
     def __init__(self):

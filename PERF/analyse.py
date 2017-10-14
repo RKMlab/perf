@@ -4,8 +4,9 @@ from __future__ import print_function, division
 import sys
 import os
 import json
-from collections import Counter
+from collections import Counter, defaultdict
 from Bio import SeqIO
+from datetime import datetime
 
 
 def writetoHTML(html_file):
@@ -28,13 +29,14 @@ def writetoHTML(html_file):
     html_handle.close()
     print("HTML report successfully saved to " + html_file)
 
-def analyse(args):
+def analyse(args, top100length, top100unit):
     seq_file = args.input
     repeatsOutFile = args.output.name
     current_dir = os.path.dirname(__file__)
     analyseDataOUT = open(current_dir + '/lib/src/data.js', 'w')
     html_report = os.path.splitext(repeatsOutFile)[0] + '.html'
     print("Generating HTML report. This may take a while..")
+    print(top100length, top100unit)
     inf = float('inf')
     defaultInfo = {}
     defaultInfo['info'] = {}
@@ -46,10 +48,9 @@ def analyse(args):
     totalBases = 0
     basesCounter = Counter()
     seqSizes = {}
-    with open(seq_file, "rt") as fastaFile:
+    with open(seq_file, "r") as fastaFile:
         for record in SeqIO.parse(fastaFile, 'fasta'):
             totalSeq += 1
-            # print("Processing %s" % (record.id), file=sys.stderr)
             seq = str(record.seq).upper()
             totalBases += len(seq)
             basesCounter.update(seq)
@@ -69,10 +70,11 @@ def analyse(args):
     chrBases = {}
     plotData = {'replen': {}, 'repunit': {}}
     plotInfo = {'len': {}, 'unit': {}}
-    longestLengths = [['seq', 'start', 'stop', 'repClass', 0, '+', 0, 'actualrep']]*100
-    mostUnits = [['seq', 'start', 'stop', 'repClass', 0, '+', 0, 'actualrep']]*100
+    longestLengths = []
+    mostUnits = []
     minLength = inf
     minUnits = inf
+    starttime = datetime.now()
     with open(repeatsOutFile, 'r') as repFile:
         for line in repFile:
             line = line.strip()
@@ -90,6 +92,8 @@ def analyse(args):
             repOri = fields[5]
             repUnit = fields[6]
             actualRepeat = fields[7]
+            totalRepBases += repLength
+            totalRepFreq += 1
 
             if minUnits > repUnit:
                 minUnits = repUnit
@@ -111,23 +115,15 @@ def analyse(args):
                 elif repUnit in plotData['repunit'][repClass]:
                     plotData['repunit'][repClass][repUnit] += 1
 
-            totalRepBases += repLength
-            totalRepFreq += 1
-            if longestLengths[-1][4] < repLength:
-                longestLengths[-1] = fields
-            elif longestLengths[-1][4] == repLength:
-                if repClass < longestLengths[-1][3]:
-                    longestLengths[-1] = fields
-            longestLengths.sort(key=lambda x: x[4])
-            longestLengths.reverse()
-            if mostUnits[-1][6] < repUnit:
-                mostUnits[-1] = fields
-            elif mostUnits[-1][6] == repUnit:
-                if repClass < longestLengths[-1][3]:
-                    longestLengths[-1] = fields
-            mostUnits.sort(key=lambda x: x[6])
-            mostUnits.reverse()
-
+            if repLength >= top100length:
+                longestLengths.append(fields)
+            if repUnit >= top100unit:
+                longestLengths.append(fields)
+    longestLengths.sort(key=lambda x: x[4])
+    longestLengths.reverse()
+    mostUnits.sort(key=lambda x: x[6])
+    mostUnits.reverse()
+    print(datetime.now() - starttime)
     for rep in plotData['replen']:
         freqs = list(plotData['replen'][rep].values())
         repFreqByClass.append({ 'name': rep, 'value': sum(freqs) })
