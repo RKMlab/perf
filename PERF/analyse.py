@@ -7,6 +7,7 @@ import json
 from collections import Counter, defaultdict
 from Bio import SeqIO
 from datetime import datetime
+import gzip
 
 
 def writetoHTML(html_file):
@@ -36,7 +37,6 @@ def analyse(args, top100length, top100unit):
     analyseDataOUT = open(current_dir + '/lib/src/data.js', 'w')
     html_report = os.path.splitext(repeatsOutFile)[0] + '.html'
     print("Generating HTML report. This may take a while..")
-    print(top100length, top100unit)
     inf = float('inf')
     defaultInfo = {}
     defaultInfo['info'] = {}
@@ -48,20 +48,23 @@ def analyse(args, top100length, top100unit):
     totalBases = 0
     basesCounter = Counter()
     seqSizes = {}
-    with open(seq_file, "r") as fastaFile:
-        for record in SeqIO.parse(fastaFile, 'fasta'):
-            totalSeq += 1
-            seq = str(record.seq).upper()
-            totalBases += len(seq)
-            basesCounter.update(seq)
-            seqSizes[record.id] = len(seq)
-        try:
-            GC = (float(basesCounter["G"] + basesCounter["C"])/(totalBases-basesCounter["N"]))*100
-        except KeyError:
-            GC = (float(basesCounter["G"] + basesCounter["C"])/totalBases)*100
-        defaultInfo['info']['genomeSize'] = totalBases
-        defaultInfo['info']['GC'] = round(GC, 2)
-        defaultInfo['info']['numSeq'] = totalSeq
+    if seq_file.endswith('gz'):
+        fastaFile = gzip.open(seq_file, 'rt')
+    else:
+        fastaFile = open(seq_file, 'r')
+    for record in SeqIO.parse(fastaFile, 'fasta'):
+        totalSeq += 1
+        seq = str(record.seq).upper()
+        totalBases += len(seq)
+        basesCounter.update(seq)
+        seqSizes[record.id] = len(seq)
+    try:
+        GC = (float(basesCounter["G"] + basesCounter["C"])/(totalBases-basesCounter["N"]))*100
+    except KeyError:
+        GC = (float(basesCounter["G"] + basesCounter["C"])/totalBases)*100
+    defaultInfo['info']['genomeSize'] = totalBases
+    defaultInfo['info']['GC'] = round(GC, 2)
+    defaultInfo['info']['numSeq'] = totalSeq
     totalRepBases = 0
     totalRepFreq = 0
     repFreqByClass = []
@@ -118,12 +121,11 @@ def analyse(args, top100length, top100unit):
             if repLength >= top100length:
                 longestLengths.append(fields)
             if repUnit >= top100unit:
-                longestLengths.append(fields)
+                mostUnits.append(fields)
     longestLengths.sort(key=lambda x: x[4])
     longestLengths.reverse()
     mostUnits.sort(key=lambda x: x[6])
     mostUnits.reverse()
-    print(datetime.now() - starttime)
     for rep in plotData['replen']:
         freqs = list(plotData['replen'][rep].values())
         repFreqByClass.append({ 'name': rep, 'value': sum(freqs) })
