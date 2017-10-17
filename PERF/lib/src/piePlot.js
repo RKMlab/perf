@@ -144,13 +144,15 @@ pieRepeatSelect.onChange = function(info) {
             let kmer = removedValue.slice(11, removedValue.length);
             let tempCurrentValues = _.difference(currentValues, repeatSet[kmer]);
             currentValues = tempCurrentValues;
-            pieRepeatSelect.set([]);
-            pieRepeatSelect.set(currentValues);
             pieSetValues = currentValues;
-            piePlotRepeats = _.filter(pieSetValues, function(d) {
-                return d.slice(0, 10) != 'select-all';
-            });
-            piePlot(piePlotRepeats);
+            if (_.intersection(repeatSet[kmer], piePlotRepeats).length > 0) {
+                pieRepeatSelect.set([]);
+                pieRepeatSelect.set(currentValues);
+                piePlotRepeats = _.filter(pieSetValues, function(d) {
+                    return d.slice(0, 10) != 'select-all';
+                });
+                piePlot(piePlotRepeats);
+            }
         } else {
             pieSetValues = currentValues;
             piePlotRepeats = _.filter(pieSetValues, function(d) {

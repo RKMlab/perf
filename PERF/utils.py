@@ -5,6 +5,7 @@ from __future__ import print_function, division
 import sys
 from itertools import product, takewhile, repeat
 from tqdm import tqdm
+import gzip
 
 
 def rev_comp(string):
@@ -35,10 +36,13 @@ def get_cycles(string):
         cycles.append(string[i:] + string[:i])
     return cycles
 
-def rawSeqCount(filename):
-    f = open(filename, 'rb')
+def rawcharCount(filename, char):
+    if filename.endswith('gz'):
+        f = gzip.open(filename, 'rb')
+    else:
+        f = open(filename, 'rb')
     bufgen = takewhile(lambda x: x, (f.read(1024*1024) for _ in repeat(None)))
-    return sum( buf.count(b'>') for buf in bufgen if buf )
+    return sum( buf.count(char.encode('ASCII')) for buf in bufgen if buf )
 
 
 def generate_repeats(min_size, max_size):

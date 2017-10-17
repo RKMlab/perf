@@ -6,6 +6,7 @@ import os
 import json
 from collections import Counter
 from Bio import SeqIO
+import gzip
 
 
 def writetoHTML(html_file):
@@ -46,21 +47,25 @@ def analyse(args):
     totalBases = 0
     basesCounter = Counter()
     seqSizes = {}
-    with open(seq_file, "rt") as fastaFile:
-        for record in SeqIO.parse(fastaFile, 'fasta'):
-            totalSeq += 1
-            # print("Processing %s" % (record.id), file=sys.stderr)
-            seq = str(record.seq).upper()
-            totalBases += len(seq)
-            basesCounter.update(seq)
-            seqSizes[record.id] = len(seq)
-        try:
-            GC = (float(basesCounter["G"] + basesCounter["C"])/(totalBases-basesCounter["N"]))*100
-        except KeyError:
-            GC = (float(basesCounter["G"] + basesCounter["C"])/totalBases)*100
-        defaultInfo['info']['genomeSize'] = totalBases
-        defaultInfo['info']['GC'] = round(GC, 2)
-        defaultInfo['info']['numSeq'] = totalSeq
+    if seq_file.endswith('gz'):
+        fastaFile = gzip.open(seq_file, 'r')
+    else:
+        fastaFile = open(seq_file, 'r')
+    # with open(seq_file, "rt") as fastaFile:
+    for record in SeqIO.parse(fastaFile, 'fasta'):
+        totalSeq += 1
+        # print("Processing %s" % (record.id), file=sys.stderr)
+        seq = str(record.seq).upper()
+        totalBases += len(seq)
+        basesCounter.update(seq)
+        seqSizes[record.id] = len(seq)
+    try:
+        GC = (float(basesCounter["G"] + basesCounter["C"])/(totalBases-basesCounter["N"]))*100
+    except KeyError:
+        GC = (float(basesCounter["G"] + basesCounter["C"])/totalBases)*100
+    defaultInfo['info']['genomeSize'] = totalBases
+    defaultInfo['info']['GC'] = round(GC, 2)
+    defaultInfo['info']['numSeq'] = totalSeq
     totalRepBases = 0
     totalRepFreq = 0
     repFreqByClass = []
