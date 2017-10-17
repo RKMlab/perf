@@ -10,7 +10,7 @@ from datetime import datetime
 import gzip
 
 
-def writetoHTML(html_file):
+def writetoHTML(html_file, defaultInfo):
     html_handle = open(html_file, 'w')
     current_dir = os.path.dirname(__file__)
     with open(current_dir + '/lib/template.html') as report:
@@ -20,11 +20,14 @@ def writetoHTML(html_file):
             try:
                 start_index = line.index("^^")
                 stop_index = line.index("$$")
-                file_path = current_dir + '/lib' + line[start_index+2: stop_index]
-                with open(file_path) as fh:
-                    for subline in fh:
-                        subline = subline.strip()
-                        print(subline, file=html_handle)
+                if (line[start_index+2: stop_index] == 'defaultInfo'):
+                    print(defaultInfo, file=html_handle)
+                else:
+                    file_path = current_dir + '/lib' + line[start_index+2: stop_index]
+                    with open(file_path) as fh:
+                        for subline in fh:
+                            subline = subline.strip()
+                            print(subline, file=html_handle)
             except ValueError:
                 pass
     html_handle.close()
@@ -34,7 +37,6 @@ def analyse(args, top100length, top100unit):
     seq_file = args.input
     repeatsOutFile = args.output.name
     current_dir = os.path.dirname(__file__)
-    analyseDataOUT = open(current_dir + '/lib/src/data.js', 'w')
     html_report = os.path.splitext(repeatsOutFile)[0] + '.html'
     print("Generating HTML report. This may take a while..")
     inf = float('inf')
@@ -182,6 +184,5 @@ def analyse(args, top100length, top100unit):
             seqInfo['freqDens'] = "0.0"
             seqInfo['bpDens'] = "0.0"
         defaultInfo['info']['seqInfo'].append(seqInfo)
-    print('const data =', json.dumps(defaultInfo), file=analyseDataOUT)
-    analyseDataOUT.close()
-    writetoHTML(html_report)
+    defaultInfo = 'const data =' + json.dumps(defaultInfo)
+    writetoHTML(html_report, defaultInfo)
