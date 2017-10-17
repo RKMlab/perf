@@ -96,13 +96,15 @@ barRepeatSelect.onChange = function(info) {
             let kmer = removedValue.slice(11, removedValue.length);
             let tempCurrentValues = _.difference(currentValues, repeatSet[kmer]);
             currentValues = tempCurrentValues;
-            barRepeatSelect.set([]);
-            barRepeatSelect.set(currentValues);
             barSetValues = currentValues;
-            barPlotRepeats = _.filter(barSetValues, function(d) {
-                return d.slice(0, 10) != 'select-all';
-            });
-            barPlot('repeat', barPlotRepeats);
+            if (_.intersection(repeatSet[kmer], barPlotRepeats).length > 0) {
+                barRepeatSelect.set([]);
+                barRepeatSelect.set(currentValues);
+                barPlotRepeats = _.filter(barSetValues, function(d) {
+                    return d.slice(0, 10) != 'select-all';
+                });
+                barPlot('repeat', barPlotRepeats);
+            }
         } else {
             barSetValues = currentValues;
             barPlotRepeats = _.filter(barSetValues, function(d) {

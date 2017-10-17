@@ -128,13 +128,15 @@ lineRepeatSelect.onChange = function(info) {
             let kmer = removedValue.slice(11, removedValue.length);
             let tempCurrentValues = _.difference(currentValues, repeatSet[kmer]);
             currentValues = tempCurrentValues;
-            lineRepeatSelect.set([]);
-            lineRepeatSelect.set(currentValues);
             lineSetValues = currentValues;
-            linePlotRepeats = _.filter(lineSetValues, function(d) {
-                return d.slice(0, 10) != 'select-all';
-            });
-            linePlot(linePlotRepeats);
+            if (_.intersection(repeatSet[kmer], linePlotRepeats).length > 0) {
+                lineRepeatSelect.set([]);
+                lineRepeatSelect.set(currentValues);
+                linePlotRepeats = _.filter(lineSetValues, function(d) {
+                    return d.slice(0, 10) != 'select-all';
+                });
+                linePlot(linePlotRepeats);
+            }
         } else {
             lineSetValues = currentValues;
             linePlotRepeats = _.filter(lineSetValues, function(d) {
