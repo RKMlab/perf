@@ -19,8 +19,6 @@ elif sys.version_info.major == 3:
     from analyse import analyse
 
 inf = float('inf')
-allLengths = []
-allUnits = []
 
 def getArgs():
     """
@@ -85,8 +83,6 @@ def getSSRNative(args):
     Identifies microsatellites using native string matching.
     As the entire sequence is scanned in a single iteration, the speed is vastly improved
     """
-    global allLengths
-    global allUnits
 
     length_cutoff = args.min_length
     repeat_file = args.repeats
@@ -110,7 +106,7 @@ def getSSRNative(args):
     for record in records:
         records.set_description("Processing %s" %(record.id))
         if  min_seq_length <= len(record.seq) <= max_seq_length and record.id in target_ids:
-            allLengths, allUnits = get_ssrs(record, repeats_info, repeat_set, out_file, allLengths, allUnits)
+            get_ssrs(record, repeats_info, repeat_set, out_file)
     out_file.close()
 
 
@@ -119,8 +115,6 @@ def getSSR_units(args, unit_cutoff):
     Identifies microsatellites using native string matching.
     The repeat length cutoffs vary for different motif sizes.
     """
-    global allLengths
-    global allUnits
 
     repeat_file = args.repeats
     seq_file = args.input
@@ -143,7 +137,7 @@ def getSSR_units(args, unit_cutoff):
     for record in records:
         records.set_description("Processing %s" %(record.id))
         if  (min_seq_length <= len(record.seq) <= max_seq_length) and record.id in target_ids:
-            allLengths, allUnits = get_ssrs(record, repeats_info, repeat_set, out_file, allLengths, allUnits)
+            get_ssrs(record, repeats_info, repeat_set, out_file)
 
     out_file.close()
 
@@ -153,9 +147,6 @@ def main():
     Main function of the script
     """
     args = getArgs()
-
-    global allLengths
-    global allUnits
 
     # User specifies motif size range instead of giving a repeats file
     if args.repeats is None:
@@ -196,19 +187,8 @@ def main():
         getSSRNative(args)
            
     # Specifies to generate a HTML report
-    if args.analyse:        
-        allLengths = sorted(allLengths, reverse=True)
-        allUnits = sorted(allUnits, reverse=True)
-        
-        try:
-            allLengths = allLengths[99]
-        except IndexError:
-            allLengths = allLengths[-1]
-        try:
-            allUnits = allUnits[99]
-        except IndexError:
-            allUnits = allUnits[-1]
-        analyse(args, allLengths, allUnits)
+    if args.analyse:
+        analyse(args)
 
 
 if __name__ == '__main__':

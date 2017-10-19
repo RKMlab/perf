@@ -33,7 +33,7 @@ def writetoHTML(html_file, defaultInfo):
     html_handle.close()
     print("HTML report successfully saved to " + html_file)
 
-def analyse(args, top100length, top100unit):
+def analyse(args):
     seq_file = args.input
     repeatsOutFile = args.output.name
     current_dir = os.path.dirname(__file__)
@@ -75,8 +75,8 @@ def analyse(args, top100length, top100unit):
     chrBases = {}
     plotData = {'replen': {}, 'repunit': {}}
     plotInfo = {'len': {}, 'unit': {}}
-    longestLengths = []
-    mostUnits = []
+    longestLengths = [['seq', 'start', 'stop', 'repClass', 0, '+', 0, 'actualrep']]*100
+    mostUnits = [['seq', 'start', 'stop', 'repClass', 0, '+', 0, 'actualrep']]*100
     minLength = inf
     minUnits = inf
     starttime = datetime.now()
@@ -105,6 +105,21 @@ def analyse(args, top100length, top100unit):
             if minLength > repLength:
                 minLength = repLength
 
+            if longestLengths[-1][4] < repLength:
+                longestLengths[-1] = fields
+            elif longestLengths[-1][4] == repLength:
+                if repClass < longestLengths[-1][3]:
+                    longestLengths[-1] = fields
+            longestLengths.sort(key=lambda x: x[4])
+            longestLengths.reverse()
+            if mostUnits[-1][6] < repUnit:
+                mostUnits[-1] = fields
+            elif mostUnits[-1][6] == repUnit:
+                if repClass < longestLengths[-1][3]:
+                    longestLengths[-1] = fields
+            mostUnits.sort(key=lambda x: x[6])
+            mostUnits.reverse()
+
             if repClass not in plotData['replen']:
                 plotData['replen'][repClass] = {}
                 plotData['replen'][repClass][repLength] = 1
@@ -120,14 +135,6 @@ def analyse(args, top100length, top100unit):
                 elif repUnit in plotData['repunit'][repClass]:
                     plotData['repunit'][repClass][repUnit] += 1
 
-            if repLength >= top100length:
-                longestLengths.append(fields)
-            if repUnit >= top100unit:
-                mostUnits.append(fields)
-    longestLengths.sort(key=lambda x: x[4])
-    longestLengths.reverse()
-    mostUnits.sort(key=lambda x: x[6])
-    mostUnits.reverse()
     for rep in plotData['replen']:
         freqs = list(plotData['replen'][rep].values())
         repFreqByClass.append({ 'name': rep, 'value': sum(freqs) })

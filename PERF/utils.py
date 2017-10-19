@@ -141,7 +141,7 @@ def build_rep_set(repeat_file, **kwargs):
     return repeats_out
 
 
-def get_ssrs(seq_record, repeats_info, repeats, out_file, ssr_lengths, ssr_units):
+def get_ssrs(seq_record, repeats_info, repeats, out_file):
     repeat_lengths = repeats_info['rep_lengths'] # All possible length cutoffs
     input_seq = str(seq_record.seq).upper()
     input_seq_length = len(input_seq)
@@ -164,8 +164,6 @@ def get_ssrs(seq_record, repeats_info, repeats, out_file, ssr_lengths, ssr_units
                         match = False
                         match_length = sub_stop - sub_start
                         num_units = int(match_length/motif_length)
-                        ssr_lengths.append(match_length)
-                        ssr_units.append(num_units)
                         print(seq_record.id, sub_start, sub_stop, repeats_info[subseq]['class'], match_length, repeats_info[subseq]['strand'], num_units, subseq[:motif_length], sep="\t", file=out_file)
                         sub_start = sub_stop - fallback
                     elif input_seq[j] == repeat_seq[i]:
@@ -177,13 +175,10 @@ def get_ssrs(seq_record, repeats_info, repeats, out_file, ssr_lengths, ssr_units
                         match = False
                         match_length = sub_stop - sub_start
                         num_units = int(match_length/motif_length)
-                        ssr_lengths.append(match_length)
-                        ssr_units.append(num_units)
                         print(seq_record.id, sub_start, sub_stop, repeats_info[subseq]['class'], match_length, repeats_info[subseq]['strand'], num_units, subseq[:motif_length], sep="\t", file=out_file)
                         sub_start = sub_stop - fallback
             else:
                 sub_start += 1
-    return ssr_lengths, ssr_units
 
 class univset(object):
     def __init__(self):
