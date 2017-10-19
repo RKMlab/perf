@@ -15,8 +15,8 @@ if sys.version_info.major == 2:
     from utils import generate_repeats, get_ssrs, build_rep_set, univset, rawcharCount
     from analyse import analyse
 elif sys.version_info.major == 3:
-    from utils import generate_repeats, get_ssrs, build_rep_set, univset, rawcharCount
-    from analyse import analyse
+    from .utils import generate_repeats, get_ssrs, build_rep_set, univset, rawcharCount
+    from .analyse import analyse
 
 inf = float('inf')
 
