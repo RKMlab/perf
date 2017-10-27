@@ -1,4 +1,7 @@
 # PERF
+[![Build](https://img.shields.io/badge/Build-passing-brightgreen.svg)]()
+[![PyPI](https://img.shields.io/badge/PyPI-v0.2.5-blue.svg)]()
+[![License](https://img.shields.io/badge/Licence-MIT-blue.svg)]()
 ## Introduction
 PERF is a Python package developed for fast and accurate identification of microsatellites from DNA sequences. Microsatellites or Simple Sequence Repeats (SSRs) are short tandem repeats of 1-6nt motifs. They are present in all genomes, and have a wide range of uses and functional roles. The existing tools for SSR identification have one or more caveats in terms of speed, comprehensiveness, accuracy, ease-of-use, flexibility and memory usage. PERF was designed to address all these problems.
 
