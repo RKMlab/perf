@@ -26,7 +26,7 @@ def getArgs():
     """
     Parses command line arguments and returns them to the caller
     """
-    __version__ = 'v0.2.4'
+    __version__ = 'v0.3.0'
     parser = argparse.ArgumentParser()
     parser._action_groups.pop()
     required = parser.add_argument_group('Required arguments')
@@ -98,14 +98,13 @@ def getSSRNative(args):
     min_seq_length = args.min_seq_length
     max_seq_length = args.max_seq_length
     target_ids = get_targetids(args.filter_seq_ids, args.target_seq_ids)
+    num_records = rawcharCount(seq_file, '>')
     print('Using length cutoff of %d' % (length_cutoff), file=sys.stderr)
 
-    num_records = rawcharCount(seq_file, '>')
     if seq_file.endswith('gz'):
         handle = gzip.open(seq_file, 'rt')
     else:
         handle = open(seq_file, 'r')
-    # with open(seq_file, "rt") as handle:
     records = SeqIO.parse(handle, 'fasta')
     records = tqdm(records, total=num_records)
     for record in records:
