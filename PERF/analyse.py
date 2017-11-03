@@ -6,7 +6,6 @@ import os
 import json
 from collections import Counter, defaultdict
 from Bio import SeqIO
-from datetime import datetime
 import gzip
 
 
@@ -51,11 +50,21 @@ def analyse(args):
     basesCounter = Counter()
     seqSizes = {}
     if seq_file.endswith('gz'):
+<<<<<<< HEAD
         fastaFile = gzip.open(seq_file, 'rt')
     else:
         fastaFile = open(seq_file, 'r')
     for record in SeqIO.parse(fastaFile, 'fasta'):
         totalSeq += 1
+=======
+        fastaFile = gzip.open(seq_file, 'r')
+    else:
+        fastaFile = open(seq_file, 'r')
+    # with open(seq_file, "rt") as fastaFile:
+    for record in SeqIO.parse(fastaFile, 'fasta'):
+        totalSeq += 1
+        # print("Processing %s" % (record.id), file=sys.stderr)
+>>>>>>> annotation
         seq = str(record.seq).upper()
         totalBases += len(seq)
         basesCounter.update(seq)

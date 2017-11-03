@@ -14,9 +14,11 @@ import gzip
 if sys.version_info.major == 2:
     from utils import generate_repeats, get_ssrs, build_rep_set, univset, rawcharCount
     from analyse import analyse
+    from annotation import annotate
 elif sys.version_info.major == 3:
     from utils import generate_repeats, get_ssrs, build_rep_set, univset, rawcharCount
     from analyse import analyse
+    from annotation import annotate
 
 inf = float('inf')
 
@@ -24,7 +26,7 @@ def getArgs():
     """
     Parses command line arguments and returns them to the caller
     """
-    __version__ = 'v0.2.5'
+    __version__ = 'v0.3.0'
     parser = argparse.ArgumentParser()
     parser._action_groups.pop()
     required = parser.add_argument_group('Required arguments')
@@ -43,6 +45,10 @@ def getArgs():
     seqid_group = optional.add_mutually_exclusive_group()
     seqid_group.add_argument('-f', '--filter-seq-ids', metavar='<FILE>')
     seqid_group.add_argument('-F', '--target-seq-ids', metavar='<FILE>')
+    optional.add_argument('-g', '--gff-input', '--annotate', metavar='<FILE>', help='GFF input file for annotation')
+    optional.add_argument("--gene-attribute", metavar="<STR>", default="gene", type=str, help='Attribute key for geneId')
+    optional.add_argument('--up-promoter', metavar="<INT>", type=int, default=1000, help='Upstream distance(bp) from TSS to be considered as promoter region. Default 1000')
+    optional.add_argument('--down-promoter', metavar="<INT>", type=int, default=1000, help='Downstream distance(bp) from TSS to be considered as promoter region. Default 1000')    
     optional.add_argument('--version', action='version', version='PERF ' + __version__)
 
     args = parser.parse_args()
@@ -95,14 +101,13 @@ def getSSRNative(args):
     min_seq_length = args.min_seq_length
     max_seq_length = args.max_seq_length
     target_ids = get_targetids(args.filter_seq_ids, args.target_seq_ids)
+    num_records = rawcharCount(seq_file, '>')
     print('Using length cutoff of %d' % (length_cutoff), file=sys.stderr)
 
-    num_records = rawcharCount(seq_file, '>')
     if seq_file.endswith('gz'):
         handle = gzip.open(seq_file, 'rt')
     else:
         handle = open(seq_file, 'r')
-
     records = SeqIO.parse(handle, 'fasta')
     records = tqdm(records, total=num_records)
     for record in records:
@@ -126,21 +131,19 @@ def getSSR_units(args, unit_cutoff):
     min_seq_length = args.min_seq_length
     max_seq_length = args.max_seq_length
     target_ids = get_targetids(args.filter_seq_ids, args.target_seq_ids)
-    print('Using unit cutoff of ', unit_cutoff, file=sys.stderr)
-
     num_records = rawcharCount(seq_file, '>')
+
+    print('Using unit cutoff of ', unit_cutoff, file=sys.stderr)
     if seq_file.endswith('gz'):
         handle = gzip.open(seq_file, 'rt')
     else:
         handle = open(seq_file, 'r')
-
     records = SeqIO.parse(handle, 'fasta')
     records = tqdm(records, total=num_records)
     for record in records:
         records.set_description("Processing %s" %(record.id))
         if  (min_seq_length <= len(record.seq) <= max_seq_length) and record.id in target_ids:
             get_ssrs(record, repeats_info, repeat_set, out_file)
-
     out_file.close()
 
 
@@ -188,9 +191,13 @@ def main():
         args.min_length = 12
         getSSRNative(args)
            
+    if args.gff_input is not None:
+        annotate(args)
+
     # Specifies to generate a HTML report
     if args.analyse:
         analyse(args)
+
 
 
 if __name__ == '__main__':
