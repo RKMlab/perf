@@ -47,8 +47,8 @@ def getArgs():
     seqid_group.add_argument('-F', '--target-seq-ids', metavar='<FILE>')
     optional.add_argument('-g', '--gff-input', '--annotate', metavar='<FILE>', help='GFF input file for annotation')
     optional.add_argument("--gene-attribute", metavar="<STR>", default="gene", type=str, help='Attribute key for geneId')
-    optional.add_argument('--upstream-prom', metavar="<INT>", type=int, default=1000, help='Upstream distance(bp) from TSS to be considered as promoter region. Default 1000')
-    optional.add_argument('--downstream-prom', metavar="<INT>", type=int, default=1000, help='Downstream distance(bp) from TSS to be considered as promoter region. Default 1000')    
+    optional.add_argument('--up-promoter', metavar="<INT>", type=int, default=1000, help='Upstream distance(bp) from TSS to be considered as promoter region. Default 1000')
+    optional.add_argument('--down-promoter', metavar="<INT>", type=int, default=1000, help='Downstream distance(bp) from TSS to be considered as promoter region. Default 1000')    
     optional.add_argument('--version', action='version', version='PERF ' + __version__)
 
     args = parser.parse_args()

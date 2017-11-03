@@ -101,8 +101,8 @@ def annotate(args):
     output_file = open(os.path.splitext(rep_file)[0] + '_annotation.tsv', 'w')
     geneId = args.gene_attribute
 
-    promUp = args.upstream_prom
-    promDown = args.downstream_prom
+    promUp = args.up_promoter
+    promDown = args.down_promoter
 
     gffObject = processGFF(gff_file, geneId)
     geneObj = gffObject['gene']
