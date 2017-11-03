@@ -46,7 +46,8 @@ $ PERF --help # Long option
 which gives the following output
 ```
 usage: PERF [-h] -i <FILE> [-o <FILE>] [-a] [-l <INT> | -u INT or FILE]
-            [-rep <FILE>] [-m <INT>] [-M <INT>] [--version]
+            [-rep <FILE>] [-m <INT>] [-M <INT>] [-s <INT>] [-S <FLOAT>]
+            [-f <FILE> | -F <FILE>] [--version]
 
 Required arguments:
   -i <FILE>, --input <FILE>
@@ -71,6 +72,14 @@ Optional arguments:
   -M <INT>, --max-motif-size <INT>
                         Maximum size of a repeat motif in bp (Not allowed with
                         -rep)
+  -s <INT>, --min-seq-length <INT>
+                        Minimum size of sequence length for consideration (in
+                        bp)
+  -S <FLOAT>, --max-seq-length <FLOAT>
+                        Maximum size of sequence length for consideration (in
+                        bp)
+  -f <FILE>, --filter-seq-ids <FILE>
+  -F <FILE>, --target-seq-ids <FILE>
   --version             show program's version number and exit
 ```
 The details of each option are given below:
@@ -83,7 +92,7 @@ This is the only required argument for the program. The input file must be a val
 ### `-o or --output`
 **Expects:** *STRING (to be used as filename)*<br>
 **Default:** *Input Filename + _perf.tsv (see below)*<br>
-The output is a tab-delimited file, with one SSR record per line. If this option is not provided, the default output filename will the same as the input filename, with its extension replaced with '_perf.tsv'. For example, if the input filename is `my_seq.fa`, the default output filename will be `my_seq_perf.tsv`. If the input filename does not have any extension, `_perf.tsv` will be appended to the filename. Please note that even in the case of no identified SSRs, the output file is still created (therefore overwriting any previous file of the same name) but with no content in the file.
+The output is a tab-delimited file, with one SSR record per line. If this option is not provided, the default output filename will be the same as the input filename, with its extension replaced with '_perf.tsv'. For example, if the input filename is `my_seq.fa`, the default output filename will be `my_seq_perf.tsv`. If the input filename does not have any extension, `_perf.tsv` will be appended to the filename. Please note that even in the case of no identified SSRs, the output file is still created (therefore overwriting any previous file of the same name) but with no content in the file.
 
 The output columns follow the [BED](https://genome.ucsc.edu/FAQ/FAQformat.html) format. The details of the columns are given below:
 
@@ -168,6 +177,26 @@ Minimum length of motifs to be considered. By default, PERF ignores redundant mo
 **Expects:** *INTEGER*<br>
 **Default:** *6*<br>
 Maximum length of motifs to be considered. Setting a large value of `-M` has a non-trivial effect on both the runtime and memory usage of PERF. This is noticeable with `-M` values above 10.
+
+### `-s or --min-seq-length`
+**Expects:** *INTEGER*<br>
+**Default:** *0*<br>
+Minimum length of the input sequence to be searched for SSRs in bp. All sequences in the input file that are smaller than this length will be ignored.
+
+### `-S or --max-seq-length`
+**Expects:** *INTEGER*<br>
+**Default:** *Infinity*<br>
+Maximum length of the input sequence to be searched for SSRs in bp. All sequences in the input file that are larger than this length will be ignored.
+
+### `-f or --filter-seq-ids`
+**Expects:** *FILE*<br>
+**Default:** *None*<br>
+This option accepts a file with a list of sequence IDs in the input file that should be ignored. Useful for ignoring contigs, scaffold, or other poor quality sequences. The IDs can be FASTA headers (starting with '>' symbol) or just the names without the '>' symbol.
+
+### `-F or --target-seq-ids`
+**Expects:** *FILE*<br>
+**Default:** *None*<br>
+This option accepts a file with a list of sequence IDs in the input file that should be analyzed. All other sequences will be ignored. Useful for analyzing specific chromosomes from a large input file. The IDs can be FASTA headers (starting with '>' symbol) or just the names without the '>' symbol.
 
 ### `--version`
 Prints the version info of PERF.

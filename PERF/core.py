@@ -66,6 +66,7 @@ def get_targetids(filter_seq_ids, target_seq_ids):
         with open(filter_seq_ids) as fh:
             for line in fh:
                 line = line.strip()
+                line = line.lstrip('>')
                 filter_ids.append(line)
         target_ids = target_ids - set(filter_ids)
     elif target_seq_ids:
@@ -73,6 +74,7 @@ def get_targetids(filter_seq_ids, target_seq_ids):
         with open(target_seq_ids) as fh:
             for line in fh:
                 line = line.strip()
+                line = line.lstrip('>')
                 target_ids.append(line)
         target_ids = set(target_ids)
 
