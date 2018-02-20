@@ -50,13 +50,6 @@ def analyse(args):
     basesCounter = Counter()
     seqSizes = {}
     if seq_file.endswith('gz'):
-<<<<<<< HEAD
-        fastaFile = gzip.open(seq_file, 'rt')
-    else:
-        fastaFile = open(seq_file, 'r')
-    for record in SeqIO.parse(fastaFile, 'fasta'):
-        totalSeq += 1
-=======
         fastaFile = gzip.open(seq_file, 'r')
     else:
         fastaFile = open(seq_file, 'r')
@@ -64,7 +57,6 @@ def analyse(args):
     for record in SeqIO.parse(fastaFile, 'fasta'):
         totalSeq += 1
         # print("Processing %s" % (record.id), file=sys.stderr)
->>>>>>> annotation
         seq = str(record.seq).upper()
         totalBases += len(seq)
         basesCounter.update(seq)
@@ -88,7 +80,7 @@ def analyse(args):
     mostUnits = [['seq', 'start', 'stop', 'repClass', 0, '+', 0, 'actualrep']]*100
     minLength = inf
     minUnits = inf
-    starttime = datetime.now()
+    # starttime = datetime.now()
     with open(repeatsOutFile, 'r') as repFile:
         for line in repFile:
             line = line.strip()

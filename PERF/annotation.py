@@ -1,11 +1,11 @@
 #!usr/bin/python
-from __future__ import print_function, division
+from __future__ import print_function, division, absolute_import
 from operator import itemgetter
 import argparse
 from tqdm import tqdm
 import os
 import gzip
-from utils import rawcharCount
+from .utils import rawcharCount
 
 """
 
@@ -57,7 +57,7 @@ def processGFF(GFF, geneId):
     else:
         gff = open(GFF)
     for line in gff:
-        line = line.decode('utf-8')
+        # line = line.decode('utf-8')
         line = line.strip()
         if line.startswith('#'):
             pass

@@ -2,7 +2,7 @@
 
 # pylint: disable=C0103, C0301
 
-from __future__ import print_function, division
+from __future__ import print_function, division, absolute_import
 import sys
 from os.path import splitext
 import argparse
@@ -11,14 +11,9 @@ from Bio import SeqIO
 from collections import Counter
 import gzip
 
-if sys.version_info.major == 2:
-    from utils import generate_repeats, get_ssrs, build_rep_set, univset, rawcharCount
-    from analyse import analyse
-    from annotation import annotate
-elif sys.version_info.major == 3:
-    from utils import generate_repeats, get_ssrs, build_rep_set, univset, rawcharCount
-    from analyse import analyse
-    from annotation import annotate
+from .utils import generate_repeats, get_ssrs, build_rep_set, univset, rawcharCount
+from .analyse import analyse
+from .annotation import annotate
 
 inf = float('inf')
 

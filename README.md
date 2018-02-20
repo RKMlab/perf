@@ -47,7 +47,8 @@ which gives the following output
 ```
 usage: PERF [-h] -i <FILE> [-o <FILE>] [-a] [-l <INT> | -u INT or FILE]
             [-rep <FILE>] [-m <INT>] [-M <INT>] [-s <INT>] [-S <FLOAT>]
-            [-f <FILE> | -F <FILE>] [--version]
+            [-f <FILE> | -F <FILE>] [-g <FILE>] [--gene-attribute <STR>]
+            [--up-promoter <INT>] [--down-promoter <INT>] [--version]
 
 Required arguments:
   -i <FILE>, --input <FILE>
@@ -80,7 +81,17 @@ Optional arguments:
                         bp)
   -f <FILE>, --filter-seq-ids <FILE>
   -F <FILE>, --target-seq-ids <FILE>
+  -g <FILE>, --gff-input <FILE>, --annotate <FILE>
+                        GFF input file for annotation
+  --gene-attribute <STR>
+                        Attribute key for geneId
+  --up-promoter <INT>   Upstream distance(bp) from TSS to be considered as
+                        promoter region. Default 1000
+  --down-promoter <INT>
+                        Downstream distance(bp) from TSS to be considered as
+                        promoter region. Default 1000
   --version             show program's version number and exit
+
 ```
 The details of each option are given below:
 
@@ -197,6 +208,11 @@ This option accepts a file with a list of sequence IDs in the input file that sh
 **Expects:** *FILE*<br>
 **Default:** *None*<br>
 This option accepts a file with a list of sequence IDs in the input file that should be analyzed. All other sequences will be ignored. Useful for analyzing specific chromosomes from a large input file. The IDs can be FASTA headers (starting with '>' symbol) or just the names without the '>' symbol.
+
+### `-g or --gff-input or --annotate`
+**Expects:** *FILE*<br>
+**Default:** *None*<br>
+
 
 ### `--version`
 Prints the version info of PERF.
