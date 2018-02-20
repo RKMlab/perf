@@ -254,6 +254,16 @@ $ PERF -i my_seq.fa -m 4 -M 4 -l 16 -a
 
 In all the above examples, the output of PERF is saved to `my_seq_perf.tsv` and the HTML report is saved to `my_seq_perf.html` unless `-o` is specified.
 
+
+## Citation
+
+If you find PERF useful for your research, please cite it as follows:
+
+PERF: an exhaustive algorithm for ultra-fast and efficient identification of microsatellites from large DNA sequences<br>
+*Akshay Kumar Avvaru, Divya Tej Sowpati, Rakesh Kumar Mishra*<br>
+Bioinformatics, , btx721<br>
+[doi](https://doi.org/10.1093/bioinformatics/btx721): 10.1093/bioinformatics/btx721
+
 ## Contact
 For queries or suggestions, please contact:
 
