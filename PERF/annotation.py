@@ -1,11 +1,11 @@
 #!usr/bin/python
-from __future__ import print_function, division, absolute_import
+from __future__ import print_function, division
 from operator import itemgetter
 import argparse
 from tqdm import tqdm
 import os
 import gzip
-from .utils import rawcharCount
+from utils import rawcharCount
 
 """
 
@@ -17,6 +17,17 @@ from .utils import rawcharCount
     Defaults:
         > Promoter distance is 1kb upstream and downstream of TSS.
         > Gene id considered is "gene".
+
+    Built by checking on GFF3 file.
+
+    # Sample GTF
+    1 transcribed_unprocessed_pseudogene  gene        11869 14409 . + . gene_id "ENSG00000223972"; gene_name "DDX11L1"; gene_source "havana"; gene_biotype "transcribed_unprocessed_pseudogene"; 
+    1 processed_transcript                transcript  11869 14409 . + . gene_id "ENSG00000223972"; transcript_id "ENST00000456328"; gene_name "DDX11L1"; gene_sourc e "havana"; gene_biotype "transcribed_unprocessed_pseudogene"; transcript_name "DDX11L1-002"; transcript_source "havana";
+
+    # Sample GFF
+    X	Ensembl	Repeat	2419108	2419128	42	.	.	hid=trf; hstart=1; hend=21
+    X	Ensembl	Repeat	2419108	2419410	2502	-	.	hid=AluSx; hstart=1; hend=303
+    X	Ensembl	Repeat	2419108	2419128	0	.	.	hid=dust; hstart=2419108; hend=2419128
 """
 
 def selectAnnotation(List):
@@ -38,26 +49,26 @@ def promoter(check):
 
 
 # Need to be updated for better parsing of the attributes
-def processAttrs(attribute):
+def processAttrs(attribute, annotype):
     attrObj = {}
     attributes = attribute.split(";")
+    subdelim = " " if annotype=='GTF' else "="
     for a in attributes:
-        attr = a.split("=")
-        attrName = attr[0]
-        attrObj[attrName] = attr[1]
+        attr = a.split(subdelim)
+        attrName = attr[0].strip()
+        attrObj[attrName] = attr[1].strip()
     return attrObj
 
 
-def processGFF(GFF, geneId):
+def processAnnoFile(annofile, annotype, geneId):
     #Order of columns seqname, source, feature, start, end, score, strand, frame, attribute
     geneObj = {}
     subGeneObj = {}
-    if (GFF.endswith('gz')):
-        gff = gzip.open(GFF)
+    if (annofile.endswith('gz')):
+        annohandle = gzip.open(annofile, 'rt')
     else:
-        gff = open(GFF)
-    for line in gff:
-        # line = line.decode('utf-8')
+        annohandle = open(annofile, 'r')
+    for line in annohandle:
         line = line.strip()
         if line.startswith('#'):
             pass
@@ -72,7 +83,7 @@ def processGFF(GFF, geneId):
             strand = fields[6]
             frame = fields[7]
             attribute = fields[8]
-            attrObj = processAttrs(attribute)
+            attrObj = processAttrs(attribute, annotype)
             if feature == "gene":
                 try:
                     geneObj[seqname].append([attrObj[geneId], start, end, strand])
@@ -97,17 +108,20 @@ def processGFF(GFF, geneId):
 
 def annotate(args):
     rep_file = args.output.name
-    gff_file = args.gff_input
+    anno_file = args.annotate
+    annotype = args.anno_format
     output_file = open(os.path.splitext(rep_file)[0] + '_annotation.tsv', 'w')
     geneId = args.gene_attribute
 
     promUp = args.up_promoter
     promDown = args.down_promoter
 
-    gffObject = processGFF(gff_file, geneId)
+    gffObject = processAnnoFile(anno_file, annotype, geneId)
     geneObj = gffObject['gene']
     subGeneObj = gffObject['subgene']
 
+    print('', end='\n')
+    print('Generating annotations for identified repeats..')
     print('', end='\n')
     # Counting the number of lines in bed -------------------------------------
     num_records = rawcharCount(rep_file, '\n')
@@ -156,13 +170,13 @@ def annotate(args):
                         leastStart = S1 - E2
                         minIndex = i
                     else:
-                        if S1 - E2 > 1000:
+                        if S1 - E2 > max([promUp, promDown]):
                             if leastStart > (S1 - E2):
                                 leastStart = S1 - E2
                                 minIndex = i
                     if breakCheck == 1:
                         break
-                    if (S2 - E1 > 1000):
+                    if (S2 - E1 > max([promUp, promDown])):
                         breakCheck = 1
                     # Checking if region comes in promoter --------------------
                     # For positive strand orientation -------------------------

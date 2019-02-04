@@ -37,6 +37,7 @@ def analyse(args):
     repeatsOutFile = args.output.name
     current_dir = os.path.dirname(__file__)
     html_report = os.path.splitext(repeatsOutFile)[0] + '.html'
+    inFormat = args.format
     print("Generating HTML report. This may take a while..")
     inf = float('inf')
     defaultInfo = {}
@@ -50,13 +51,11 @@ def analyse(args):
     basesCounter = Counter()
     seqSizes = {}
     if seq_file.endswith('gz'):
-        fastaFile = gzip.open(seq_file, 'r')
+        fastaFile = gzip.open(seq_file, 'rt')
     else:
         fastaFile = open(seq_file, 'r')
-    # with open(seq_file, "rt") as fastaFile:
     for record in SeqIO.parse(fastaFile, 'fasta'):
         totalSeq += 1
-        # print("Processing %s" % (record.id), file=sys.stderr)
         seq = str(record.seq).upper()
         totalBases += len(seq)
         basesCounter.update(seq)
@@ -80,7 +79,6 @@ def analyse(args):
     mostUnits = [['seq', 'start', 'stop', 'repClass', 0, '+', 0, 'actualrep']]*100
     minLength = inf
     minUnits = inf
-    # starttime = datetime.now()
     with open(repeatsOutFile, 'r') as repFile:
         for line in repFile:
             line = line.strip()
@@ -193,4 +191,5 @@ def analyse(args):
             seqInfo['bpDens'] = "0.0"
         defaultInfo['info']['seqInfo'].append(seqInfo)
     defaultInfo = 'const data =' + json.dumps(defaultInfo)
-    writetoHTML(html_report, defaultInfo)
+    print(defaultInfo)
+    # writetoHTML(html_report, defaultInfo)

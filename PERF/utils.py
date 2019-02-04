@@ -6,6 +6,7 @@ import sys
 from itertools import product, takewhile, repeat
 from tqdm import tqdm
 import gzip
+from collections import Counter, defaultdict
 
 
 def rev_comp(string):
@@ -180,6 +181,47 @@ def get_ssrs(seq_record, repeats_info, repeats, out_file):
             else:
                 sub_start += 1
 
+def get_ssrs_fastq(seq_record, repeats_info, repeats, out_file):
+    rep_identified = defaultdict(list)
+    repeat_lengths = repeats_info['rep_lengths'] # All possible length cutoffs
+    input_seq = str(seq_record.seq).upper()
+    input_seq_length = len(input_seq)
+    for length_cutoff in repeat_lengths:
+        fallback = length_cutoff - 1
+        sub_start = 0  # substring start
+        sub_stop = sub_start + repeat_lengths[-1]  # substring stop
+        while sub_stop <= input_seq_length:
+            sub_stop = sub_start + length_cutoff
+            subseq = input_seq[sub_start:sub_stop]
+            if subseq in repeats:
+                match = True
+                motif_length = repeats_info[subseq]['motif_length']
+                offset = length_cutoff % motif_length
+                repeat_seq = input_seq[sub_start+offset:sub_start+offset+motif_length]
+                i = 0
+                while match:
+                    j = sub_stop
+                    if sub_stop >= input_seq_length:
+                        match = False
+                        match_length = sub_stop - sub_start
+                        num_units = int(match_length/motif_length)
+                        rep_identified[repeats_info[subseq]['class']].append(match_length)
+                        sub_start = sub_stop - fallback
+                    elif input_seq[j] == repeat_seq[i]:
+                        sub_stop += 1
+                        i += 1
+                        if i >= motif_length:
+                            i = 0
+                    else:
+                        match = False
+                        match_length = sub_stop - sub_start
+                        num_units = int(match_length/motif_length)
+                        rep_identified[repeats_info[subseq]['class']].append(match_length)
+                        sub_start = sub_stop - fallback
+            else:
+                sub_start += 1
+    return rep_identified
+
 class univset(object):
     def __init__(self):
         self._diff = set()
@@ -263,3 +305,36 @@ class univset(object):
  
     def __gt__(self, other):
         return self.issuperset(other) or self == other
+
+class dotDict(dict):
+    """
+    Example:
+    m = dotDict({'first_name': 'Eduardo'}, last_name='Pool', age=24, sports=['Soccer'])
+    """
+    def __init__(self, *args, **kwargs):
+        super(dotDict, self).__init__(*args, **kwargs)
+        for arg in args:
+            if isinstance(arg, dict):
+                for k, v in arg.items():
+                    self[k] = v
+
+        if kwargs:
+            for k, v in kwargs.items():
+                self[k] = v
+
+    def __getattr__(self, attr):
+        return self.get(attr)
+
+    def __setattr__(self, key, value):
+        self.__setitem__(key, value)
+
+    def __setitem__(self, key, value):
+        super(dotDict, self).__setitem__(key, value)
+        self.__dict__.update({key: value})
+
+    def __delattr__(self, item):
+        self.__delitem__(item)
+
+    def __delitem__(self, key):
+        super(dotDict, self).__delitem__(key)
+        del self.__dict__[key]
