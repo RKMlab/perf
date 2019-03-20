@@ -3,10 +3,20 @@
 
 from __future__ import print_function, division
 import sys
-from itertools import product, takewhile, repeat
+from itertools import product, takewhile, repeat, islice
 from tqdm import tqdm
 import gzip
 from collections import Counter, defaultdict
+from datetime import datetime
+
+
+def getGC(basesCounter):
+    totalBases = sum(basesCounter.values())
+    try:
+        GC = (float(basesCounter["G"] + basesCounter["C"])/(totalBases-basesCounter["N"]))*100
+    except KeyError:
+        GC = (float(basesCounter["G"] + basesCounter["C"])/totalBases)*100
+    return GC
 
 
 def rev_comp(string):
@@ -36,6 +46,7 @@ def get_cycles(string):
     for i in range(len(string)):
         cycles.append(string[i:] + string[:i])
     return cycles
+
 
 def rawcharCount(filename, char):
     if filename.endswith('gz'):
@@ -142,7 +153,37 @@ def build_rep_set(repeat_file, **kwargs):
     return repeats_out
 
 
+def get_targetids(filter_seq_ids, target_seq_ids):
+    """
+        The function returns the set of desired sequence ids 
+        across which repeats will be identified.
+    """
+    target_ids = univset()
+    if filter_seq_ids:
+        target_ids = univset()
+        filter_ids = []
+        with open(filter_seq_ids) as fh:
+            for line in fh:
+                line = line.strip()
+                line = line.lstrip('>')
+                filter_ids.append(line)
+        target_ids = target_ids - set(filter_ids)
+    
+    elif target_seq_ids:
+        target_ids = []
+        with open(target_seq_ids) as fh:
+            for line in fh:
+                line = line.strip()
+                line = line.lstrip('>')
+                target_ids.append(line)
+        target_ids = set(target_ids)
+
+    return target_ids
+
+
 def get_ssrs(seq_record, repeats_info, repeats, out_file):
+    """Native function that identifies repeats in fasta files."""
+    
     repeat_lengths = repeats_info['rep_lengths'] # All possible length cutoffs
     input_seq = str(seq_record.seq).upper()
     input_seq_length = len(input_seq)
@@ -181,7 +222,61 @@ def get_ssrs(seq_record, repeats_info, repeats, out_file):
             else:
                 sub_start += 1
 
-def get_ssrs_fastq(seq_record, repeats_info, repeats, out_file):
+
+def process_fastq(handle, min_seq_length, max_seq_length, repeats_info, repeat_set):
+    """Processes fastq files and identifies repeats."""
+    n,b = [0,0]
+    total_repeats = 0
+    reads_with_repeats = 0
+    total_repeat_bases = 0
+    fastq_repeat_info = dict()
+    readlen_freq = Counter()
+    start_time = datetime.now()
+    while 1:
+        lines_gen = list(islice(handle, 4))
+        if len(lines_gen) == 0:
+            break
+        read_id = lines_gen[0].strip()
+        read_seq = lines_gen[1].strip()
+        n += 1 # total reads
+        b += len(read_seq) # total bases
+        readlen_freq.update([len(read_seq)]) #updatind the read length frequencies
+        if n%50000 == 0:
+            time_diff = datetime.now() - start_time
+            print('Processed reads: %d | Time elapsed: %s | Rate: %d iters/s\r' %(n, time_diff, n/(time_diff.seconds+1)), end = '')
+            sys.stdout.flush()
+        record = dotDict({'id': read_id, 'seq': read_seq})
+        # read length should be greater than minimum repeat length
+        if  min_seq_length <= len(record.seq) <= max_seq_length:
+            rep_identified = get_ssrs_fastq(record, repeats_info, repeat_set)
+            for rep in rep_identified:
+                try:
+                    fastq_repeat_info[rep]['lengths'].update(rep_identified[rep])
+                    fastq_repeat_info[rep]['instances'] += len(rep_identified[rep])
+                    fastq_repeat_info[rep]['reads'] += 1
+                    fastq_repeat_info[rep]['bases'] += sum(rep_identified[rep])
+                except KeyError:
+                    fastq_repeat_info[rep] = {'lengths': Counter(rep_identified[rep]), 
+                                            'instances': len(rep_identified[rep]),
+                                            'reads': 1,
+                                            'bases': sum(rep_identified[rep])}
+                reads_with_repeats += 1
+                total_repeats += len(rep_identified[rep])
+    print('') #A line for proper printing of the output
+    min_readlen = min(readlen_freq.keys())
+    max_readlen = max(readlen_freq.keys())
+    if min_readlen == max_readlen:
+        readlen_range = '%d bp' %(min_readlen)
+    else:
+        readlen_range = '%d-%d (bp)' %(min_readlen, max_readlen)
+    return {'info': { 'readInfo': {'total_reads': n, 'total_bases': b, 'reads_with_repeats': reads_with_repeats, 
+            'total_repeats': total_repeats, 'total_repeat_bases': total_repeat_bases, 'readlen_freq': readlen_freq, 
+            'readlen_range': readlen_range}, 'repInfo': fastq_repeat_info}}
+
+
+def get_ssrs_fastq(seq_record, repeats_info, repeats):
+    """Native function to identify repeats in fastq files"""
+
     rep_identified = defaultdict(list)
     repeat_lengths = repeats_info['rep_lengths'] # All possible length cutoffs
     input_seq = str(seq_record.seq).upper()
@@ -221,6 +316,37 @@ def get_ssrs_fastq(seq_record, repeats_info, repeats, out_file):
             else:
                 sub_start += 1
     return rep_identified
+
+
+def ssr_fastq_output(fastq_out, out_file):
+    """PERF OUTPUT for fastq files."""
+    rep_fastq_info = fastq_out['info']['repInfo']
+    total_repeats = fastq_out['info']['readInfo']['total_repeats']
+    reads_with_repeats = fastq_out['info']['readInfo']['reads_with_repeats']
+    n = fastq_out['info']['readInfo']['total_reads']
+    b = fastq_out['info']['readInfo']['total_bases']
+    readlen_freq = fastq_out['info']['readInfo']['readlen_freq']
+    total_repeat_classes = 0
+    
+    print('#Total_reads: %d\n#Total_bases: %d\n#Total_repeat_instances:\
+        %d\n#Total_reads_with_repeats: %d\n#Total_repeats_per_million_reads: %d'\
+    %(n, b, total_repeats, reads_with_repeats, round((total_repeats/n)*1000000, 3)),
+    file=out_file)
+    print('#Read_length_distribution: ', readlen_freq.most_common(), end="", file=out_file)
+    print('repeatClass', 'reads', 'instances', 'bases', 'reads_norm', 'instances_norm',
+        'bases_norm', 'length_distribution', sep='\t', file=out_file)
+    
+    for rep in sorted(rep_fastq_info, key= lambda k: (len(k), k)):
+        try:
+            total_repeat_classes += 1
+            print(rep, rep_fastq_info[rep]['reads'], rep_fastq_info[rep]['instances'], rep_fastq_info[rep]['bases'],
+                round((rep_fastq_info[rep]['reads']/n)*1000000, 3), round((rep_fastq_info[rep]['instances']/n)*1000000, 3), 
+                round((rep_fastq_info[rep]['bases']/b)*1000000, 3), '-'.join([':'.join([str(y) for y in x]) for x in sorted(rep_fastq_info[rep]['lengths'].items())]),
+                sep='\t', file=out_file)
+        except TypeError:
+            print(rep, '\t'.join([str(0) for i in range(6)]), '-', sep="\t", file=out_file)
+
+
 
 class univset(object):
     def __init__(self):
@@ -305,6 +431,7 @@ class univset(object):
  
     def __gt__(self, other):
         return self.issuperset(other) or self == other
+
 
 class dotDict(dict):
     """

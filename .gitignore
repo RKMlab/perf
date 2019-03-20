@@ -10,3 +10,5 @@
 /*.egg-info
 
 /build/
+
+/test_data/million_100.fastq
