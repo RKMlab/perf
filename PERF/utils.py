@@ -332,7 +332,7 @@ def ssr_fastq_output(fastq_out, out_file):
         %d\n#Total_reads_with_repeats: %d\n#Total_repeats_per_million_reads: %d'\
     %(n, b, total_repeats, reads_with_repeats, round((total_repeats/n)*1000000, 3)),
     file=out_file)
-    print('#Read_length_distribution: ', readlen_freq.most_common(), end="", file=out_file)
+    print('#Read_length_distribution: ', readlen_freq.most_common(), file=out_file)
     print('repeatClass', 'reads', 'instances', 'bases', 'reads_norm', 'instances_norm',
         'bases_norm', 'length_distribution', sep='\t', file=out_file)
     
