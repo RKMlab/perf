@@ -46,7 +46,8 @@ def getArgs():
     optional.add_argument('-M', '--max-motif-size', type=int, metavar='<INT>', default=6, help='Maximum size of a repeat motif in bp (Not allowed with -rep)')
     optional.add_argument('-s', '--min-seq-length', type=int, metavar = '<INT>', default=0, help='Minimum size of sequence length for consideration (in bp)')
     optional.add_argument('-S', '--max-seq-length', type=float, metavar='<FLOAT>', default=inf, help='Maximum size of sequence length for consideration (in bp)')
-    
+    optional.add_argument('--include-atomic', action='store_true', default=False, help='An option to include factor atomic repeats for minimum motif sizes greater than 1.')
+
     #Annotation options
     optional.add_argument('--anno-format', type=str, default='GFF', help='Format of genic annotation file. Valid inputs: GFF, GTF. Default: GFF')
     optional.add_argument("--gene-attribute", metavar="<STR>", default="gene", type=str, help='Attribute key for geneId')
@@ -140,7 +141,7 @@ def main():
     if args.repeats is None:
         min_motif_size = args.min_motif_size
         max_motif_size = args.max_motif_size
-        args.repeats = generate_repeats(min_motif_size, max_motif_size)
+        args.repeats = generate_repeats(min_motif_size, max_motif_size, args.include_atomic)
 
     # User specifies minimum length
     if args.min_length:

@@ -57,13 +57,16 @@ def rawcharCount(filename, char):
     return sum( buf.count(char.encode('ASCII')) for buf in bufgen if buf )
 
 
-def generate_repeats(min_size, max_size):
+def generate_repeats(min_size, max_size, atomic):
     """Generates all possible motifs for repeats in a given length range"""
     generated_repeats = []
     alphabet = ['A', 'C', 'G', 'T']
     expanded_set = set()
     repeat_set = set()
-    for i in range(min_size, max_size+1):
+    init_size = 1
+    if atomic:
+        init_size = min_size
+    for i in range(init_size, max_size+1):
         for combination in product(alphabet, repeat=i):
             repeat = ''.join(combination)
             repeat_revcomp = rev_comp(repeat)
@@ -78,7 +81,8 @@ def generate_repeats(min_size, max_size):
                     expanded_set.add(string)
                     if cycle not in repeat_set:
                         repeat_set.add(cycle)
-                        generated_repeats.append('\t'.join([cycle, repeat, str(len(cycle)), strand]))
+                        if len(cycle) >= min_size:
+                            generated_repeats.append('\t'.join([cycle, repeat, str(len(cycle)), strand]))
                 if repeat_revcomp == repeat:
                     continue
                 repeat_cycles = get_cycles(repeat_revcomp)
@@ -88,7 +92,8 @@ def generate_repeats(min_size, max_size):
                     expanded_set.add(string)
                     if cycle not in repeat_set:
                         repeat_set.add(cycle)
-                        generated_repeats.append('\t'.join([cycle, repeat, str(len(cycle)), strand]))
+                        if len(cycle) >= min_size:
+                            generated_repeats.append('\t'.join([cycle, repeat, str(len(cycle)), strand]))
     return generated_repeats
 
 
