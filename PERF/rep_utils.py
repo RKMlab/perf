@@ -116,9 +116,9 @@ def build_rep_set(repeat_file, length_cutoff=None, unit_cutoff=None):
 
 
 
-def get_ssrs(seq_record, repeats_info, out_file):
+def get_ssrs(seq_record, repeats_info, out_name):
     """Native function that identifies repeats in fasta files."""
-    
+    out_file = open(out_name, 'w')
     repeat_lengths = repeats_info['rep_lengths'] # All possible length cutoffs
     input_seq = str(seq_record.seq).upper()
     input_seq_length = len(input_seq)
@@ -156,3 +156,4 @@ def get_ssrs(seq_record, repeats_info, out_file):
                         sub_start = sub_stop - fallback
             else:
                 sub_start += 1
+    out_file.close()

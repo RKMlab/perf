@@ -5,10 +5,12 @@
 from __future__ import print_function, division
 import sys, argparse, gzip, json, ntpath
 from os.path import splitext
+from os import remove as del_file
 from tqdm import tqdm
 from Bio import SeqIO
 from collections import Counter, defaultdict
 from datetime import datetime
+import multiprocessing as multi
 
 from utils import rawcharCount, dotDict, getGC, get_targetids
 from rep_utils import generate_repeats, get_ssrs, build_rep_set
@@ -78,6 +80,8 @@ def getArgs():
 
     return args
 
+def sequence_length(seq):
+    print(seq.id, len(seq.seq))
 
 def ssr_native(args, length_cutoff=False, unit_cutoff=False):
     """
@@ -110,12 +114,30 @@ def ssr_native(args, length_cutoff=False, unit_cutoff=False):
         num_records = rawcharCount(seq_file, '>')
         records = SeqIO.parse(handle, 'fasta')
         records = tqdm(records, total=num_records)
+        i = 0
+        jobs = []
         for record in records:
+            out_name = f'./temp_{i}.tsv'
+            i += 1
             records.set_description("Processing %s" %(record.id))
             if (args.info or args.analyse)==True:
                 seq_nucleotide_info.update(record.seq.upper())
             if  min_seq_length <= len(record.seq) <= max_seq_length and record.id in target_ids:
-                get_ssrs(record, repeats_info, out_file)
+                p = multi.Process(target=get_ssrs, args=(record, repeats_info, out_name,))
+                jobs.append(p)
+                p.start()
+
+        for j in jobs:
+            j.join()
+
+        for r in range(num_records):
+            name = f'./temp_{r}.tsv'
+            with open(name, 'r') as fh:
+                for line in fh:
+                    print(line.strip(), file=out_file)
+            del_file(name)
+        out_file.close()
+                
 
         if (args.info or args.analyse)==True:
             line = "#File_name: %s\n#Total_sequences: %d\n#Total_bases: %d\n#GC: %f"\
