@@ -10,8 +10,9 @@ from Bio import SeqIO
 from collections import Counter, defaultdict
 from datetime import datetime
 
-from utils import generate_repeats, get_ssrs, get_ssrs_fastq, build_rep_set, univset
-from utils import ssr_fastq_output, rawcharCount, dotDict, process_fastq, get_targetids, getGC
+from utils import rawcharCount, dotDict, getGC, get_targetids
+from rep_utils import generate_repeats, get_ssrs, build_rep_set
+from fastq_utils import ssr_fastq_output, process_fastq, get_ssrs_fastq
 from analyse import analyse, analyse_fastq
 from annotation import annotate
 
@@ -35,7 +36,7 @@ def getArgs():
     
     #Basic options
     optional.add_argument('-o', '--output', type=argparse.FileType('r+'), metavar='<FILE>', default=sys.stdout, help='Output file name. Default: Input file name + _perf.tsv')
-    optional.add_argument('--info', action='store_true', default='False', help='Sequence file info recorded in the output.')
+    optional.add_argument('--info', action='store_true', default=False, help='Sequence file info recorded in the output.')
     
     optional.add_argument('-rep', '--repeats', type=argparse.FileType('r'), metavar='<FILE>', help='File with list of repeats (Not allowed with -m and/or -M)')
     optional.add_argument('-a', '--analyse', action='store_true', default=False, help='Generate a summary HTML report.')
@@ -94,7 +95,6 @@ def ssr_native(args, length_cutoff=False, unit_cutoff=False):
 
     seq_file = args.input
     out_file = args.output
-    repeat_set = set(repeats_info.keys())
     min_seq_length = args.min_seq_length
     max_seq_length = args.max_seq_length
     target_ids = get_targetids(args.filter_seq_ids, args.target_seq_ids)
@@ -115,8 +115,8 @@ def ssr_native(args, length_cutoff=False, unit_cutoff=False):
             if (args.info or args.analyse)==True:
                 seq_nucleotide_info.update(record.seq.upper())
             if  min_seq_length <= len(record.seq) <= max_seq_length and record.id in target_ids:
-                get_ssrs(record, repeats_info, repeat_set, out_file)
-        
+                get_ssrs(record, repeats_info, out_file)
+
         if (args.info or args.analyse)==True:
             line = "#File_name: %s\n#Total_sequences: %d\n#Total_bases: %d\n#GC: %f"\
             %(ntpath.basename(seq_file), num_records, sum(seq_nucleotide_info.values()),\
@@ -124,7 +124,7 @@ def ssr_native(args, length_cutoff=False, unit_cutoff=False):
             print(line, file=out_file)
 
     elif input_format == 'fastq':
-        fastq_out = process_fastq(handle, min_seq_length, max_seq_length, repeats_info, repeat_set)
+        fastq_out = process_fastq(handle, min_seq_length, max_seq_length, repeats_info)
         ssr_fastq_output(fastq_out, out_file)
         if args.analyse:
             analyse_fastq(args, fastq_out)

@@ -8,7 +8,7 @@ from collections import Counter, defaultdict
 from Bio import SeqIO
 import gzip
 import numpy as np
-
+from pprint import pprint
 
 def writetoHTML(html_file, defaultInfo):
     html_handle = open(html_file, 'w')
@@ -57,7 +57,7 @@ def analyse(args):
 
     inf = float('inf')
     defaultInfo = {}
-    defaultInfo['info'] = {'genomeInfo': {}, 'repInfo': {}, 'plotInfo': {}}
+    defaultInfo['info'] = {'genomeInfo': {}, 'repInfo': {}, 'repInfo': {}}
     
     if args.annotate: #if annotation is on the data is taken from t
         repeatsOutFile = os.path.splitext(repeatsOutFile)[0] + '_annotation.tsv'
@@ -145,7 +145,7 @@ def analyse(args):
                 mostUnits.sort(key=lambda x: x[6])
                 mostUnits.reverse()
     totalBases = int(defaultInfo['info']['genomeInfo']['Total_bases'])
-    defaultInfo['info']['plotInfo'] = plot_data
+    defaultInfo['info']['repInfo'] = plot_data
     defaultInfo['info']['repInfo']['numRepClasses'] = len(plot_data.keys())
     defaultInfo['info']['repInfo']['totalRepBases'] = totalRepBases
     defaultInfo['info']['repInfo']['totalRepFreq'] = totalRepFreq
@@ -177,6 +177,7 @@ def analyse(args):
     outFile.close()
 
 def analyse_fastq(args, fastq_out):
+
     """Generates HTML report for fastq files."""
     fastq_out['info']['readInfo']['file_name'] = args.input.split('/')[-1]
     total_repeats = fastq_out['info']['readInfo']['total_repeats']
@@ -197,7 +198,14 @@ def analyse_fastq(args, fastq_out):
     fastq_out['info']['readInfo']['reads_with_repeats_norm'] = str(round((reads_with_repeats/n)*100, 2)) + '%'
     fastq_out['info']['readInfo']['percent_repeat_bases'] = str(round((total_repeat_bases/b)*100, 2)) + '%'
     fastq_out['info']['readInfo']['total_repeat_classes'] = str(total_repeat_classes) + '/501'
-    info_out = open('../../analysis_new/fastq/src/analyse_fastqdata.js', 'w')
+
+    rep_fastq_info = fastq_out['info']['repInfo']
+    for rep in sorted(rep_fastq_info, key= lambda k: (len(k), k)):
+        fastq_out['info']['repInfo'][rep]['reads_norm'] = round((rep_fastq_info[rep]['reads']/n)*1000000, 3)
+        fastq_out['info']['repInfo'][rep]['instances_norm'] = round((rep_fastq_info[rep]['instances']/n)*1000000, 3)
+        fastq_out['info']['repInfo'][rep]['bases_norm'] = round((rep_fastq_info[rep]['bases']/b)*1000000, 3)
+
+    info_out = open('/media/akshay/DATA/PERF/analysis_new/fastq/src/analyse_fastqdata.js', 'w')
     default_info = 'const data =' + json.dumps(fastq_out)
     print(default_info, file=info_out)
     info_out.close()
