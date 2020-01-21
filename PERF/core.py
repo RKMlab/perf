@@ -12,6 +12,8 @@ from collections import Counter, defaultdict
 from datetime import datetime
 import multiprocessing as multi
 
+import cProfile
+
 from utils import rawcharCount, dotDict, getGC, get_targetids
 from rep_utils import generate_repeats, get_ssrs, build_rep_set
 from fastq_utils import ssr_fastq_output, process_fastq, get_ssrs_fastq
@@ -67,6 +69,9 @@ def getArgs():
     seqid_group.add_argument('-f', '--filter-seq-ids', metavar='<FILE>')
     seqid_group.add_argument('-F', '--target-seq-ids', metavar='<FILE>')
 
+    #Multiprocessing threads
+    optional.add_argument('-t', '--threads', type=int, metavar='<INT>', default=1, help='Number of threads to run the process on. Default is 1.')
+
     args = parser.parse_args()
     
     if args.repeats and (args.min_motif_size or args.max_motif_size):
@@ -80,8 +85,6 @@ def getArgs():
 
     return args
 
-def sequence_length(seq):
-    print(seq.id, len(seq.seq))
 
 def ssr_native(args, length_cutoff=False, unit_cutoff=False):
     """
@@ -103,6 +106,7 @@ def ssr_native(args, length_cutoff=False, unit_cutoff=False):
     max_seq_length = args.max_seq_length
     target_ids = get_targetids(args.filter_seq_ids, args.target_seq_ids)
     input_format = args.format
+    threads = args.threads
 
     if seq_file.endswith('gz'):
         handle = gzip.open(seq_file, 'rt')
@@ -116,22 +120,27 @@ def ssr_native(args, length_cutoff=False, unit_cutoff=False):
         records = tqdm(records, total=num_records)
         i = 0
         jobs = []
+        pool = multi.Pool(processes=threads)
         for record in records:
-            out_name = f'./temp_{i}.tsv'
+            out_name = './temp_%s.tsv' %(i)
             i += 1
             records.set_description("Processing %s" %(record.id))
             if (args.info or args.analyse)==True:
                 seq_nucleotide_info.update(record.seq.upper())
             if  min_seq_length <= len(record.seq) <= max_seq_length and record.id in target_ids:
-                p = multi.Process(target=get_ssrs, args=(record, repeats_info, out_name,))
-                jobs.append(p)
-                p.start()
+                pool.apply_async(get_ssrs, (record, repeats_info, out_name,)) #.Process(target=get_ssrs, args=(record, repeats_info, out_name,))
+                # jobs.append(p)
+                # p.start()
+        pool.close() 
+        pool.join()
+        # for j in jobs:
+        #     j.join()
 
-        for j in jobs:
-            j.join()
-
-        for r in range(num_records):
-            name = f'./temp_{r}.tsv'
+        # Concat all the output files into one.
+        temp_outs = tqdm(range(num_records), total=num_records)
+        for o in temp_outs:
+            name = './temp_%s.tsv' %(o)
+            temp_outs.set_description("Concatenating file: %d " %(o))
             with open(name, 'r') as fh:
                 for line in fh:
                     print(line.strip(), file=out_file)
@@ -167,7 +176,7 @@ def main():
 
     # User specifies minimum length
     if args.min_length:
-         ssr_native(args, length_cutoff=args.min_length)
+        ssr_native(args, length_cutoff=args.min_length)
 
     # User specific minimum number of units
     elif args.min_units:
