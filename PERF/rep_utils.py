@@ -74,6 +74,7 @@ def build_rep_set(repeat_file, length_cutoff=None, unit_cutoff=None):
     repeats_out = dict()
     motif_fallback = dict()
     repeat_lengths = set()
+    rep_minlengths = dict()
     if length_cutoff is not None:
         motif_lengths = set()
         for line in repeat_file:
@@ -89,39 +90,51 @@ def build_rep_set(repeat_file, length_cutoff=None, unit_cutoff=None):
             repeats_out[motif] = motif_dict
         for m in motif_lengths:
             motif_fallback[m] = max(motif_lengths)
+            rep_minlengths[m] = length_cutoff
         repeats_out['fallback'] = motif_fallback
         repeats_out['rep_lengths'] = [length_cutoff]
+        repeats_out['rep_minlengths'] = rep_minlengths
 
     elif unit_cutoff is not None:
+        rep_minlengths = dict()
+        for motif_length in unit_cutoff:
+            rep_minlengths[motif_length] = motif_length*unit_cutoff[motif_length]
+        min_length_cutoff = min(list(rep_minlengths.values()))
         for line in repeat_file:
             motif_dict = dict()
             L = line.strip().split('\t')
             motif = L[0]
             motif_length = int(L[2])
-            try:
-                motif = motif*unit_cutoff[motif_length]
-            except KeyError:
-                motif = motif*unit_cutoff[0]
+            # try:
+            #     motif = motif*unit_cutoff[motif_length]
+            # except KeyError:
+            #     motif = motif*unit_cutoff[0]
+            motif = expand_repeat(motif, min_length_cutoff)
             repeat_lengths.add(len(motif))
             motif_fallback[motif_length] = len(motif) - 1
             motif_dict['class'] = L[1]
             motif_dict['motif_length'] = motif_length
             motif_dict['strand'] = L[3]
             repeats_out[motif] = motif_dict
-        repeat_lengths = sorted(list(repeat_lengths))
-        repeats_out['rep_lengths'] = repeat_lengths
+        # repeat_lengths = sorted(list(repeat_lengths))
+        repeats_out['rep_lengths'] = list(repeat_lengths)
         repeats_out['fallback'] = motif_fallback
+        repeats_out['rep_minlengths'] = rep_minlengths
 
     return repeats_out
 
 
 
-def get_ssrs(seq_record, repeats_info, out_name):
+def get_ssrs(seq_record, repeats_info, out):
     """Native function that identifies repeats in fasta files."""
-    out_file = open(out_name, 'w')
+    if type(out) == str:
+        out_file = open(out, 'w')
+    else:
+        out_file = out
     repeat_lengths = repeats_info['rep_lengths'] # All possible length cutoffs
     input_seq = str(seq_record.seq).upper()
     input_seq_length = len(input_seq)
+    rep_minlengths = repeats_info['rep_minlengths']
     for length_cutoff in repeat_lengths:
         fallback = length_cutoff - 1
         sub_start = 0  # substring start
@@ -141,7 +154,8 @@ def get_ssrs(seq_record, repeats_info, out_name):
                         match = False
                         match_length = sub_stop - sub_start
                         num_units = int(match_length/motif_length)
-                        print(seq_record.id, sub_start, sub_stop, repeats_info[sub_seq]['class'], match_length, repeats_info[sub_seq]['strand'], num_units, sub_seq[:motif_length], sep="\t", file=out_file)
+                        if match_length >= rep_minlengths[motif_length]:
+                            print(seq_record.id, sub_start, sub_stop, repeats_info[sub_seq]['class'], match_length, repeats_info[sub_seq]['strand'], num_units, sub_seq[:motif_length], sep="\t", file=out_file)
                         sub_start = sub_stop - fallback
                     elif input_seq[j] == repeat_seq[i]:
                         sub_stop += 1
@@ -152,8 +166,11 @@ def get_ssrs(seq_record, repeats_info, out_name):
                         match = False
                         match_length = sub_stop - sub_start
                         num_units = int(match_length/motif_length)
-                        print(seq_record.id, sub_start, sub_stop, repeats_info[sub_seq]['class'], match_length, repeats_info[sub_seq]['strand'], num_units, sub_seq[:motif_length], sep="\t", file=out_file)
+                        if match_length >= rep_minlengths[motif_length]:
+                            print(seq_record.id, sub_start, sub_stop, repeats_info[sub_seq]['class'], match_length, repeats_info[sub_seq]['strand'], num_units, sub_seq[:motif_length], sep="\t", file=out_file)
                         sub_start = sub_stop - fallback
             else:
                 sub_start += 1
-    out_file.close()
+    if type(out) == str:
+        out_file.close()
+    

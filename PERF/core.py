@@ -118,36 +118,40 @@ def ssr_native(args, length_cutoff=False, unit_cutoff=False):
         num_records = rawcharCount(seq_file, '>')
         records = SeqIO.parse(handle, 'fasta')
         records = tqdm(records, total=num_records)
-        i = 0
-        jobs = []
-        pool = multi.Pool(processes=threads)
-        for record in records:
-            out_name = './temp_%s.tsv' %(i)
-            i += 1
-            records.set_description("Processing %s" %(record.id))
-            if (args.info or args.analyse)==True:
-                seq_nucleotide_info.update(record.seq.upper())
-            if  min_seq_length <= len(record.seq) <= max_seq_length and record.id in target_ids:
-                pool.apply_async(get_ssrs, (record, repeats_info, out_name,)) #.Process(target=get_ssrs, args=(record, repeats_info, out_name,))
-                # jobs.append(p)
-                # p.start()
-        pool.close() 
-        pool.join()
-        # for j in jobs:
-        #     j.join()
+        if threads > 1:
+            i = 0
+            pool = multi.Pool(processes=threads)
+            for record in records:
+                out_name = './temp_%s.tsv' %(i)
+                i += 1
+                records.set_description("Processing %s" %(record.id))
+                if (args.info or args.analyse)==True:
+                    seq_nucleotide_info.update(record.seq.upper())
+                if  min_seq_length <= len(record.seq) <= max_seq_length and record.id in target_ids:
+                    pool.apply_async(get_ssrs, (record, repeats_info, out_name,))
+        
+            pool.close() 
+            pool.join()
 
-        # Concat all the output files into one.
-        temp_outs = tqdm(range(num_records), total=num_records)
-        for o in temp_outs:
-            name = './temp_%s.tsv' %(o)
-            temp_outs.set_description("Concatenating file: %d " %(o))
-            with open(name, 'r') as fh:
-                for line in fh:
-                    print(line.strip(), file=out_file)
-            del_file(name)
+            # Concat all the output files into one.
+            temp_outs = tqdm(range(num_records), total=num_records)
+            for o in temp_outs:
+                name = './temp_%s.tsv' %(o)
+                temp_outs.set_description("Concatenating file: %d " %(o))
+                with open(name, 'r') as fh:
+                    for line in fh:
+                        print(line.strip(), file=out_file)
+                del_file(name)
+        
+        elif threads == 1:
+            for record in records:
+                records.set_description("Processing %s" %(record.id))
+                if (args.info or args.analyse)==True:
+                    seq_nucleotide_info.update(record.seq.upper())
+                if  min_seq_length <= len(record.seq) <= max_seq_length and record.id in target_ids:
+                    get_ssrs(record, repeats_info, out_file)
+
         out_file.close()
-                
-
         if (args.info or args.analyse)==True:
             line = "#File_name: %s\n#Total_sequences: %d\n#Total_bases: %d\n#GC: %f"\
             %(ntpath.basename(seq_file), num_records, sum(seq_nucleotide_info.values()),\

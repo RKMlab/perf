@@ -4,9 +4,14 @@
 from __future__ import print_function, division
 from datetime import datetime
 from itertools import islice
+from collections import Counter, defaultdict
 import sys
+import multiprocessing as multi
 
-def process_fastq(handle, min_seq_length, max_seq_length, repeats_info, repeat_set):
+from utils import dotDict
+
+
+def process_fastq(handle, min_seq_length, max_seq_length, repeats_info):
     """Processes fastq files for identification of repeats."""
     n,b = [0,0]
     total_repeats = 0
@@ -31,7 +36,7 @@ def process_fastq(handle, min_seq_length, max_seq_length, repeats_info, repeat_s
         record = dotDict({'id': read_id, 'seq': read_seq})
         # read length should be greater than minimum repeat length
         if  min_seq_length <= len(record.seq) <= max_seq_length:
-            rep_identified = get_ssrs_fastq(record, repeats_info, repeat_set)
+            rep_identified = get_ssrs_fastq(record, repeats_info)
             for rep in rep_identified:
                 try:
                     fastq_repeat_info[rep]['lengths'].update(rep_identified[rep])
@@ -57,7 +62,7 @@ def process_fastq(handle, min_seq_length, max_seq_length, repeats_info, repeat_s
             'readlen_range': readlen_range}, 'repInfo': fastq_repeat_info}}
 
 
-def get_ssrs_fastq(seq_record, repeats_info, repeats):
+def get_ssrs_fastq(seq_record, repeats_info):
     """Native function to identify repeats in fastq files"""
 
     rep_identified = defaultdict(list)
@@ -71,7 +76,7 @@ def get_ssrs_fastq(seq_record, repeats_info, repeats):
         while sub_stop <= input_seq_length:
             sub_stop = sub_start + length_cutoff
             sub_seq = input_seq[sub_start:sub_stop]
-            if sub_seq in repeats:
+            if sub_seq in repeats_info:
                 match = True
                 motif_length = repeats_info[sub_seq]['motif_length']
                 offset = length_cutoff % motif_length
