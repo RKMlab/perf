@@ -71,7 +71,7 @@ def process_annofile(annofile, annotype, gene_id):
         Order of columns for a typical GFF or GTF file:
             seqname  source  feature start   end score   strand  frame   attribute
 
-        The output is an object is a constituent of two sub dictionaries:
+        The output is an object is a constituent of two dictionaries:
             - An object for all the gene features. (key: chromosome_name, value: list of features in the chromosome).
             - An object for all the sub gene (exon, cds, etc.) features. (key: chromosome_name, 
                 value: (key: parent_geneid, value: list of features in the chromosome))
@@ -195,7 +195,7 @@ def annotate(args):
                         
                         """
                             The below conditions make an optimal choice of a feature from where distance 
-                            relation comparisons for this paricular repeat can be intiated.
+                            relation comparisons for this paricular repeat can be initiated.
                             
                             Basic assumption-
 

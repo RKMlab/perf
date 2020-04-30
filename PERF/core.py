@@ -8,11 +8,8 @@ from os.path import splitext
 from os import remove as del_file
 from tqdm import tqdm
 from Bio import SeqIO
-from collections import Counter, defaultdict
 from datetime import datetime
 import multiprocessing as multi
-
-import cProfile
 
 from utils import rawcharCount, dotDict, getGC, get_targetids
 from rep_utils import generate_repeats, get_ssrs, build_rep_set
@@ -31,11 +28,14 @@ def getArgs():
     parser = argparse.ArgumentParser()
     parser._action_groups.pop()
     
-    required = parser.add_argument_group('Required arguments')
+    sub_parser = parser.add_subparsers()
+    fasta_parser =  sub_parser.add_parser('fasta', help='This sub-command is used to identify perfect repeats from fasta files.')
+    fasta_parser.set_defaults(which = 'fasta')
+
+    required = fasta_parser.add_argument_group('Required arguments')
     required.add_argument('-i', '--input', required=True, metavar='<FILE>', help='Input sequence file.')
     
-    optional = parser.add_argument_group('Optional arguments')
-    optional.add_argument('--format', metavar='<STR>', default='fasta', help='Input file format. Default: fasta, Permissible: fasta, fastq')
+    optional = fasta_parser.add_argument_group('Optional arguments')
     optional.add_argument('--version', action='version', version='PERF ' + __version__)
     
     #Basic options
@@ -55,7 +55,10 @@ def getArgs():
 
     #Annotation options
     optional.add_argument('--anno-format', type=str, default='GFF', help='Format of genic annotation file. Valid inputs: GFF, GTF. Default: GFF')
-    optional.add_argument("--gene-attribute", metavar="<STR>", default="gene", type=str, help='Attribute key for geneId')
+    optional.add_argument("--gene-attribute", metavar="<STR>", default="gene", type=str, 
+        help="""Attribute key for geneId. The default identifier for a GFF file is "gene"
+         and for a GTF file is "gene_id". Please check the annotation file and pick a 
+         robust gene identifier from the attribute column.""")
     optional.add_argument('--up-promoter', metavar="<INT>", type=int, default=1000, help='Upstream distance(bp) from TSS to be considered as promoter region. Default 1000')
     optional.add_argument('--down-promoter', metavar="<INT>", type=int, default=1000, help='Downstream distance(bp) from TSS to be considered as promoter region. Default 1000')    
     
@@ -72,16 +75,47 @@ def getArgs():
     #Multiprocessing threads
     optional.add_argument('-t', '--threads', type=int, metavar='<INT>', default=1, help='Number of threads to run the process on. Default is 1.')
 
-    args = parser.parse_args()
+    fastq_parser = sub_parser.add_parser('fastq', help='This sub-command is used to identify perfect repeats from fastq files.')
+    fasta_parser.set_defaults(which = 'fastq')
+
+    required = fastq_parser.add_argument_group('Required arguments')
+    required.add_argument('-i', '--input', required=True, metavar='<FILE>', help='Input sequence file.')
     
+    optional = fastq_parser.add_argument_group('Optional arguments')
+    optional.add_argument('--version', action='version', version='PERF ' + __version__)
+    
+    #Basic options
+    optional.add_argument('-o', '--output', type=argparse.FileType('r+'), metavar='<FILE>', default=sys.stdout, help='Output file name. Default: Input file name + _perf.tsv')
+    optional.add_argument('--info', action='store_true', default=False, help='Sequence file info recorded in the output.')
+    
+    optional.add_argument('-rep', '--repeats', type=argparse.FileType('r'), metavar='<FILE>', help='File with list of repeats (Not allowed with -m and/or -M)')
+    optional.add_argument('-a', '--analyse', action='store_true', default=False, help='Generate a summary HTML report.')
+    optional.add_argument('-g', '--annotate', metavar='<FILE>', help='Genic annotation input file for annotation, Both GFF and GTF can be processed. Use --anno-format to specify format.')
+    
+    #Selections options based on motif size and seq lengths
+    optional.add_argument('-m', '--min-motif-size', type=int, metavar='<INT>', default=1, help='Minimum size of a repeat motif in bp (Not allowed with -rep)')
+    optional.add_argument('-M', '--max-motif-size', type=int, metavar='<INT>', default=6, help='Maximum size of a repeat motif in bp (Not allowed with -rep)')
+    optional.add_argument('-s', '--min-seq-length', type=int, metavar = '<INT>', default=0, help='Minimum size of sequence length for consideration (in bp)')
+    optional.add_argument('-S', '--max-seq-length', type=float, metavar='<FLOAT>', default=inf, help='Maximum size of sequence length for consideration (in bp)')
+    optional.add_argument('--include-atomic', action='store_true', default=False, help='An option to include factor atomic repeats for minimum motif sizes greater than 1.')
+
+    #Cutoff options (min_length or min_units)    
+    cutoff_group = optional.add_mutually_exclusive_group()
+    cutoff_group.add_argument('-l', '--min-length', type=int, metavar='<INT>', help='Minimum length cutoff of repeat')
+    cutoff_group.add_argument('-u', '--min-units', metavar='INT or FILE', help="Minimum number of repeating units to be considered. Can be an integer or a file specifying cutoffs for different motif sizes.")
+
+
+    args = parser.parse_args()
+
     if args.repeats and (args.min_motif_size or args.max_motif_size):
         parser.error("-rep is not allowed with -m/-M")
     
     if args.output.name == "<stdout>":
         args.output = open(splitext(args.input)[0] + '_perf.tsv', 'w')
-    
-    if args.anno_format == 'GTF' and args.gene_attribute == 'gene':
-        args.gene_attribute = 'gene_id'
+
+    if args.which == 'fasta':
+        if args.anno_format == 'GTF' and args.gene_attribute == 'gene':
+            args.gene_attribute = 'gene_id'
 
     return args
 
@@ -105,16 +139,15 @@ def ssr_native(args, length_cutoff=False, unit_cutoff=False):
     min_seq_length = args.min_seq_length
     max_seq_length = args.max_seq_length
     target_ids = get_targetids(args.filter_seq_ids, args.target_seq_ids)
-    input_format = args.format
-    threads = args.threads
 
     if seq_file.endswith('gz'):
         handle = gzip.open(seq_file, 'rt')
     else:
         handle = open(seq_file, 'r')
     
-    if input_format == 'fasta':
-        seq_nucleotide_info = Counter()
+    if args.which == 'fasta':
+        threads = args.threads
+        seq_nucleotide_info = dict()
         num_records = rawcharCount(seq_file, '>')
         records = SeqIO.parse(handle, 'fasta')
         records = tqdm(records, total=num_records)
@@ -126,7 +159,9 @@ def ssr_native(args, length_cutoff=False, unit_cutoff=False):
                 i += 1
                 records.set_description("Processing %s" %(record.id))
                 if (args.info or args.analyse)==True:
-                    seq_nucleotide_info.update(record.seq.upper())
+                    for a in record.seq.upper():
+                        try: seq_nucleotide_info[a] += 1
+                        except KeyError: seq_nucleotide_info[a] = 1
                 if  min_seq_length <= len(record.seq) <= max_seq_length and record.id in target_ids:
                     pool.apply_async(get_ssrs, (record, repeats_info, out_name,))
         
@@ -147,18 +182,20 @@ def ssr_native(args, length_cutoff=False, unit_cutoff=False):
             for record in records:
                 records.set_description("Processing %s" %(record.id))
                 if (args.info or args.analyse)==True:
-                    seq_nucleotide_info.update(record.seq.upper())
+                    for a in record.seq.upper():
+                        try: seq_nucleotide_info[a] += 1
+                        except KeyError: seq_nucleotide_info[a] = 1
                 if  min_seq_length <= len(record.seq) <= max_seq_length and record.id in target_ids:
                     get_ssrs(record, repeats_info, out_file)
 
-        out_file.close()
         if (args.info or args.analyse)==True:
             line = "#File_name: %s\n#Total_sequences: %d\n#Total_bases: %d\n#GC: %f"\
             %(ntpath.basename(seq_file), num_records, sum(seq_nucleotide_info.values()),\
             round(getGC(seq_nucleotide_info), 2))
             print(line, file=out_file)
+        out_file.close()
 
-    elif input_format == 'fastq':
+    elif args.fastq == 'fastq':
         fastq_out = process_fastq(handle, min_seq_length, max_seq_length, repeats_info)
         ssr_fastq_output(fastq_out, out_file)
         if args.analyse:

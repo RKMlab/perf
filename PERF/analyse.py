@@ -9,6 +9,21 @@ from Bio import SeqIO
 import gzip
 import numpy as np
 from pprint import pprint
+from utils import rev_comp
+
+def get_cycles(string):
+    cycles = set()
+    for i in range(len(string)):
+        cycles.add(string[i:] + string[:i])
+    cycles = sorted(list(cycles))
+    return cycles
+
+def build_cycVariations(string):
+    cycles = get_cycles(string)
+    rev_cycles = get_cycles(rev_comp(string))
+    for r in rev_cycles:
+        if r not in cycles: cycles.append(r)
+    return cycles
 
 def writetoHTML(html_file, defaultInfo):
     html_handle = open(html_file, 'w')
@@ -47,13 +62,13 @@ def analyse(args):
     print("Generating HTML report. This may take a while..")
     
 
-    all_repeat_classes = list(map(lambda x: x.split('\t')[1], args.repeats))
-    temp = []
-    for a in all_repeat_classes:
-        if a not in temp:
-            temp.append(a)
-    all_repeat_classes = temp
-    del temp
+    all_repeat_classes = []
+    cyclical_variations = dict()
+    for r in args.repeats:
+        r = r.split('\t')[1]
+        if r not in all_repeat_classes:
+            all_repeat_classes.append(r)
+            cyclical_variations[r] = build_cycVariations(r)
 
     inf = float('inf')
     defaultInfo = {}
@@ -75,7 +90,7 @@ def analyse(args):
     minLength = inf
     minUnits = inf
 
-    plot_data = defaultdict(defaultdict)
+    plot_data = dict()
     with open(repeatsOutFile, 'r') as repFile:
         for line in repFile:
             line = line.strip()
@@ -120,32 +135,30 @@ def analyse(args):
 
                 totalRepBases += repLength
                 totalRepFreq += 1
-                if repLength in plot_data[repClass]:
-                    plot_data[repClass][repLength] += 1
-                else:
-                    plot_data[repClass][repLength] = 1
-                
-                if minUnits > repUnit:
-                    minUnits = repUnit
-                if minLength > repLength:
-                    minLength = repLength
 
-                if longestLengths[-1][4] < repLength:
+                if repClass not in plot_data:
+                    plot_data[repClass] = dict()
+                    plot_data[repClass][repLength] = [0]*len(cyclical_variations[repClass])
+                if repLength not in plot_data[repClass]: 
+                    plot_data[repClass][repLength] = [0]*len(cyclical_variations[repClass])
+                plot_data[repClass][repLength][cyclical_variations[repClass].index(actualRepeat)] += 1
+
+                if minUnits > repUnit: minUnits = repUnit
+                if minLength > repLength: minLength = repLength
+
+                if (longestLengths[-1][4] < repLength) or (longestLengths[-1][4] == repLength and repClass < longestLengths[-1][3]):
                     longestLengths[-1] = fields
-                elif longestLengths[-1][4] == repLength:
-                    if repClass < longestLengths[-1][3]:
-                        longestLengths[-1] = fields
-                longestLengths.sort(key=lambda x: x[4])
-                longestLengths.reverse()
-                if mostUnits[-1][6] < repUnit:
+                    longestLengths.sort(key=lambda x: x[4])
+                    longestLengths.reverse()
+                if (mostUnits[-1][6] < repUnit) or (mostUnits[-1][6] == repUnit and repClass < longestLengths[-1][3]):
                     mostUnits[-1] = fields
-                elif mostUnits[-1][6] == repUnit:
-                    if repClass < longestLengths[-1][3]:
-                        longestLengths[-1] = fields
-                mostUnits.sort(key=lambda x: x[6])
-                mostUnits.reverse()
+                    mostUnits.sort(key=lambda x: x[6])
+                    mostUnits.reverse()
+    for r in all_repeat_classes:
+        if r not in plot_data:
+            plot_data[r] = 0
     totalBases = int(defaultInfo['info']['genomeInfo']['Total_bases'])
-    defaultInfo['info']['repInfo'] = plot_data
+    defaultInfo['info']['repInfo']['lenFrequency'] = plot_data
     defaultInfo['info']['repInfo']['numRepClasses'] = len(plot_data.keys())
     defaultInfo['info']['repInfo']['totalRepBases'] = totalRepBases
     defaultInfo['info']['repInfo']['totalRepFreq'] = totalRepFreq
