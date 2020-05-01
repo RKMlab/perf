@@ -1,9 +1,10 @@
 #!usr/bin/python
 from __future__ import print_function, division
 from operator import itemgetter
-import argparse
+from collections import defaultdict
 from tqdm import tqdm
 import os
+import sys
 import gzip
 from utils import rawcharCount
 
@@ -64,6 +65,17 @@ def process_attrs(attribute, annotype):
     return attr_obj
 
 
+# class GeneKeyError(Exception):
+#     """
+#         Exception raised for gene key which is absent.
+#     """
+
+#     def __init__(self, expression, message):
+#         self.expression = 
+#         self.message = message
+
+
+
 def process_annofile(annofile, annotype, gene_id):
 
     """
@@ -79,8 +91,8 @@ def process_annofile(annofile, annotype, gene_id):
         The features for each chromosome are sorted based on their starts for easier downstream processing.
     """
 
-    gene_obj = {}
-    subgene_obj = {}
+    gene_obj = defaultdict(list)
+    subgene_obj = defaultdict()
     if (annofile.endswith('gz')):
         annohandle = gzip.open(annofile, 'rt')
     else:
@@ -91,29 +103,28 @@ def process_annofile(annofile, annotype, gene_id):
             pass
         else:
             fields = line.split('\t')
-            seqname = fields[0]
-            source = fields[1]
-            feature = fields[2]
+            seqname, source, feature = fields[:3]
             start = int(fields[3])
             end = int(fields[4])
-            score = fields[5]
-            strand = fields[6]
-            frame = fields[7]
-            attribute = fields[8]
+            score, strand, frame, attribute = fields[5:9]
             attr_obj = process_attrs(attribute, annotype)
-            if feature == 'gene':
+
+            if feature in set(['gene', 'exon']):
                 try:
-                    gene_obj[seqname].append([attr_obj[gene_id], start, end, strand])
+                    gene_name = attr_obj[gene_id]
                 except KeyError:
-                    gene_obj[seqname] = [[attr_obj[gene_id], start, end, strand]]
+                    print('\nGeneKeyError:')
+                    print(f'The attribute "{gene_id}" is not among the attributes for gene. Please select a different one.')
+                    print(f'The available ones are [{", ".join(list(attr_obj.keys()))}]', end='\n\n')
+                    sys.exit(1)
+
+            if feature == 'gene':
+                gene_obj[seqname].append([gene_name, start, end, strand])
             elif feature == 'exon':
                 try:
-                    subgene_obj[attr_obj[gene_id]][feature].append([start, end, strand])
+                    subgene_obj[gene_name][feature].append([start, end, strand])
                 except KeyError:
-                    try:
-                        subgene_obj[attr_obj[gene_id]][feature] = [[start, end, strand]]
-                    except KeyError:
-                        subgene_obj[attr_obj[gene_id]] = {feature: [[start, end, strand]]}
+                    subgene_obj[gene_name] = {feature: [[start, end, strand]]}
     for i in gene_obj:
         gene_obj[i] = sorted(gene_obj[i], key=itemgetter(1)) #sorting based on the start of the feature
     for a in subgene_obj:

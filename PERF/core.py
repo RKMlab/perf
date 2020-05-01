@@ -76,7 +76,7 @@ def getArgs():
     optional.add_argument('-t', '--threads', type=int, metavar='<INT>', default=1, help='Number of threads to run the process on. Default is 1.')
 
     fastq_parser = sub_parser.add_parser('fastq', help='This sub-command is used to identify perfect repeats from fastq files.')
-    fasta_parser.set_defaults(which = 'fastq')
+    fastq_parser.set_defaults(which = 'fastq')
 
     required = fastq_parser.add_argument_group('Required arguments')
     required.add_argument('-i', '--input', required=True, metavar='<FILE>', help='Input sequence file.')
@@ -195,7 +195,7 @@ def ssr_native(args, length_cutoff=False, unit_cutoff=False):
             print(line, file=out_file)
         out_file.close()
 
-    elif args.fastq == 'fastq':
+    elif args.which == 'fastq':
         fastq_out = process_fastq(handle, min_seq_length, max_seq_length, repeats_info)
         ssr_fastq_output(fastq_out, out_file)
         if args.analyse:
@@ -251,7 +251,7 @@ def main():
         annotate(args)
 
     # Specifies to generate a HTML report
-    if args.format == 'fasta' and args.analyse:
+    if args.which == 'fasta' and args.analyse:
         analyse(args)
 
 if __name__ == '__main__':
