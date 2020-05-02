@@ -150,7 +150,7 @@ def annotate(args):
     anno_file = args.annotate
     annotype = args.anno_format
     output_file = open(os.path.splitext(rep_file)[0] + '_annotation.tsv', 'w')
-    gene_id = args.gene_attribute
+    gene_id = args.gene_key
 
     promUp = args.up_promoter
     promDown = args.down_promoter
