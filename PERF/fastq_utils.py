@@ -134,3 +134,16 @@ def ssr_fastq_output(fastq_out, out_file):
         except TypeError:
             print(rep, '\t'.join([str(0) for i in range(6)]), '-', sep="\t", file=out_file)
 
+
+def fastq_ssrs(args, repeats_info):
+
+    if args.input.endswith('gz'):
+        handle = gzip.open(args.input, 'rt')
+    else:
+        handle = open(args.input, 'r')
+
+    fastq_out = process_fastq(handle, min_seq_length, max_seq_length, repeats_info)
+    ssr_fastq_output(fastq_out, args.output)
+    if args.analyse:
+        analyse_fastq(args, fastq_out)
+    args.output.close()

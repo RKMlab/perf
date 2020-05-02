@@ -28,23 +28,42 @@ def build_cycVariations(string):
 def writetoHTML(html_file, defaultInfo):
     html_handle = open(html_file, 'w')
     current_dir = os.path.dirname(__file__)
-    with open(current_dir + '/lib/template.html') as report:
-        for line in report:
-            line = line.strip()
-            print(line, file=html_handle)
-            try:
-                start_index = line.index("^^")
-                stop_index = line.index("$$")
-                if (line[start_index+2: stop_index] == 'defaultInfo'):
-                    print(defaultInfo, file=html_handle)
-                else:
-                    file_path = current_dir + '/lib' + line[start_index+2: stop_index]
-                    with open(file_path) as fh:
-                        for subline in fh:
-                            subline = subline.strip()
-                            print(subline, file=html_handle)
-            except ValueError:
-                pass
+
+    template = open(f'{current_dir}/lib/template.html', 'r').read()
+
+    fontawesome_js = open(f'{current_dir}/lib/src/all.js', 'r').read()
+    semantic_css = open(f'{current_dir}/lib/styles/semantic.min.css', 'r').read()
+    multiselect_css = open(f'{current_dir}/lib/styles/multi-select.min.css', 'r').read()
+    apexcharts_css = open(f'{current_dir}/lib/styles/apexcharts.min.css', 'r').read()
+    main_css = open(f'{current_dir}/lib/styles/main.min.css', 'r').read()
+
+    jquery_js = open(f"{current_dir}/lib/src/jquery-3.5.0.min.js", "r").read()
+    semantic_js = open(f"{current_dir}/lib/src/semantic.min.js", "r").read()
+    multiselect_js = open(f'{current_dir}/lib/src/jquery.multi-select.min.js', 'r').read()
+    apexcharts_js = open(f'{current_dir}/lib/src/apexcharts.min.js', 'r').read()
+    lodash_js = open(f'{current_dir}/lib/src/lodash.min.js', 'r').read()
+    main_js = open(f'{current_dir}/lib/src/main.min.js', 'r').read()
+    tables_js = open(f'{current_dir}/lib/src/tables.min.js', 'r').read()
+    annocharts_js = open(f'{current_dir}/lib/src/anno_charts.min.js', 'r').read()
+
+    template = template.format(
+        fontawesome_js = fontawesome_js, 
+        semantic_css = semantic_css, 
+        multiselect_css = multiselect_css, 
+        apexcharts_css = apexcharts_css, 
+        main_css = main_css, 
+        jquery_js = jquery_js, 
+        semantic_js = semantic_js, 
+        multiselect_js = multiselect_js, 
+        apexcharts_js = apexcharts_js, 
+        lodash_js = lodash_js, 
+        analyse_data_js = defaultInfo, 
+        main_js = main_js, 
+        tables_js = tables_js, 
+        annocharts_js = annocharts_js,
+    )
+
+    print(template, file=html_handle)
     html_handle.close()
     print("HTML report successfully saved to " + html_file)
 
@@ -186,7 +205,8 @@ def analyse(args):
         testDict = {'seq': a[0], 'start': a[1], 'end': a[2], 'repClass': a[3], 'repLength': a[4], 'repOri': a[5], 'repUnit': a[6], 'actualRep': a[7]}
         defaultInfo['info']['repInfo']['mostRepeatUnits'].append(testDict)
     defaultInfo = 'const data =' + json.dumps(defaultInfo)
-    print(defaultInfo, file=outFile)
+    writetoHTML(html_report, defaultInfo)
+    # print(defaultInfo, file=outFile)
     outFile.close()
 
 def analyse_fastq(args, fastq_out):

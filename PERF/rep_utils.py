@@ -3,7 +3,14 @@
 
 from __future__ import print_function, division
 from itertools import product
-from utils import rev_comp
+from Bio import SeqIO
+from tqdm import tqdm
+import gzip, os
+from os import remove as del_file
+import multiprocessing as multi
+
+from utils import rev_comp, rawcharCount, getGC, get_targetids
+
 
 
 def expand_repeat(string, size):
@@ -16,6 +23,7 @@ def expand_repeat(string, size):
         if i >= len(string):
             i = 0
     return return_string
+
 
 def get_cycles(string):
     cycles = []
@@ -174,3 +182,60 @@ def get_ssrs(seq_record, repeats_info, out):
     if type(out) == str:
         out_file.close()
     
+
+def fasta_ssrs(args, repeats_info):
+    
+    if args.input.endswith('gz'):
+        handle = gzip.open(args.input, 'rt')
+    else:
+        handle = open(args.input, 'r')
+
+    seq_nucleotide_info = dict()
+    num_records = rawcharCount(args.input, '>')
+    records = SeqIO.parse(handle, 'fasta')
+    target_ids = get_targetids(args.filter_seq_ids, args.target_seq_ids)
+    
+    if args.threads > 1:
+        i = 0
+        pool = multi.Pool(processes=args.threads)
+        for record in records:
+            out_name = './temp_%s.tsv' %(i)
+            i += 1
+            if (args.info or args.analyse)==True:
+                for a in record.seq.upper():
+                    try: seq_nucleotide_info[a] += 1
+                    except KeyError: seq_nucleotide_info[a] = 1
+            if  args.min_seq_length <= len(record.seq) <= args.max_seq_length and record.id in target_ids:
+                pool.apply_async(get_ssrs, (record, repeats_info, out_name,))
+    
+        pool.close() 
+        pool.join()
+
+        # Concat all the output files into one.
+        temp_outs = tqdm(range(num_records), total=num_records)
+        for o in temp_outs:
+            name = './temp_%s.tsv' %(o)
+            temp_outs.set_description("Concatenating file: %d " %(o))
+            with open(name, 'r') as fh:
+                for line in fh:
+                    print(line.strip(), file=args.output)
+            del_file(name)
+    
+    elif args.threads == 1:
+        records = tqdm(records, total=num_records)
+        for record in records:
+            records.set_description("Processing %s" %(record.id))
+            if (args.info or args.analyse)==True:
+                for a in record.seq.upper():
+                    try: seq_nucleotide_info[a] += 1
+                    except KeyError: seq_nucleotide_info[a] = 1
+            if  args.min_seq_length <= len(record.seq) <= args.max_seq_length and record.id in target_ids:
+                get_ssrs(record, repeats_info, args.output)
+
+    if (args.info or args.analyse)==True:
+        line = "#File_name: %s\n#Total_sequences: %d\n#Total_bases: %d\n#GC: %f"\
+        %(os.path.basename(args.input), num_records, sum(seq_nucleotide_info.values()),\
+        round(getGC(seq_nucleotide_info), 2))
+        print(line, file=args.output)
+    
+    args.output.close()
