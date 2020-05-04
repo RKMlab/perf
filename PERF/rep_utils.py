@@ -12,7 +12,6 @@ import multiprocessing as multi
 from utils import rev_comp, rawcharCount, getGC, get_targetids
 
 
-
 def expand_repeat(string, size):
     """Expands a motif to highest motif size, used for checking duplicates"""
     return_string = ''

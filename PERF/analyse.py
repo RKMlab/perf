@@ -5,11 +5,9 @@ import sys
 import os
 import json
 from collections import Counter, defaultdict
-from Bio import SeqIO
-import gzip
 import numpy as np
 from pprint import pprint
-from utils import rev_comp
+from utils import rev_comp, kmers
 
 def get_cycles(string):
     cycles = set()
@@ -25,7 +23,7 @@ def build_cycVariations(string):
         if r not in cycles: cycles.append(r)
     return cycles
 
-def writetoHTML(html_file, defaultInfo):
+def writetoHTML(html_file, defaultInfo, repeat_options):
     html_handle = open(html_file, 'w')
     current_dir = os.path.dirname(__file__)
 
@@ -61,6 +59,7 @@ def writetoHTML(html_file, defaultInfo):
         main_js = main_js, 
         tables_js = tables_js, 
         annocharts_js = annocharts_js,
+        repeat_options = repeat_options,
     )
 
     print(template, file=html_handle)
@@ -82,6 +81,7 @@ def analyse(args):
     
 
     all_repeat_classes = []
+    kmer_classes = defaultdict(list)
     cyclical_variations = dict()
     for r in args.repeats:
         r = r.split('\t')[1]
@@ -174,8 +174,17 @@ def analyse(args):
                     mostUnits.sort(key=lambda x: x[6])
                     mostUnits.reverse()
     for r in all_repeat_classes:
+        kmer_classes[kmers[len(r)]].append(r)
         if r not in plot_data:
             plot_data[r] = 0
+
+    repeat_options = ""
+    for kmer in kmer_classes:
+        repeat_options += f'<optgroup label="{kmer}">'
+        for r in kmer_classes[kmer]:
+            repeat_options += f'<option value="{r}">{r}</option>'
+        repeat_options += '</optgroup>'
+    
     totalBases = int(defaultInfo['info']['genomeInfo']['Total_bases'])
     defaultInfo['info']['repInfo']['lenFrequency'] = plot_data
     defaultInfo['info']['repInfo']['numRepClasses'] = len(plot_data.keys())
@@ -205,7 +214,7 @@ def analyse(args):
         testDict = {'seq': a[0], 'start': a[1], 'end': a[2], 'repClass': a[3], 'repLength': a[4], 'repOri': a[5], 'repUnit': a[6], 'actualRep': a[7]}
         defaultInfo['info']['repInfo']['mostRepeatUnits'].append(testDict)
     defaultInfo = 'const data =' + json.dumps(defaultInfo)
-    writetoHTML(html_report, defaultInfo)
+    writetoHTML(html_report, defaultInfo, repeat_options)
     # print(defaultInfo, file=outFile)
     outFile.close()
 
