@@ -50,8 +50,7 @@ def getArgs():
     #Annotation options
     optional.add_argument('--anno-format', type=str, default='GFF', help='Format of genic annotation file. Valid inputs: GFF, GTF. Default: GFF')
     optional.add_argument("--gene-key", metavar="<STR>", default="gene", type=str, 
-        help="""Attribute key for geneId. The default identifier for a GFF file is "gene"
-         and for a GTF file is "gene_id". Please check the annotation file and pick a robust gene identifier from the attribute column.""")
+        help='Attribute key for geneId. The default identifier is "gene". Please check the annotation file and pick a robust gene identifier from the attribute column.')
     optional.add_argument('--up-promoter', metavar="<INT>", type=int, default=1000, help='Upstream distance(bp) from TSS to be considered as promoter region. Default 1000')
     optional.add_argument('--down-promoter', metavar="<INT>", type=int, default=1000, help='Downstream distance(bp) from TSS to be considered as promoter region. Default 1000')    
     

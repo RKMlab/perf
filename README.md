@@ -3,7 +3,7 @@
 PERF is a Python package developed for fast and accurate identification of microsatellites from DNA sequences. Microsatellites or Simple Sequence Repeats (SSRs) are short tandem repeats of 1-6nt motifs. They are present in all genomes, and have a wide range of uses and functional roles. The existing tools for SSR identification have one or more caveats in terms of speed, comprehensiveness, accuracy, ease-of-use, flexibility and memory usage. PERF was designed to address all these problems.
 
 PERF is a recursive acronym that stands for "PERF is an Exhaustive Repeat Finder". It is compatible with both Python 2 (tested on Python 2.7) and 3 (tested on Python 3.5). Its key features are:
-  - Fast run time, despite being a single-threaded application. As an example, identification of all SSRs from the entire human genome takes less than 7 minutes. The speed can be further improved ~3 to 4 fold using [PyPy](https://pypy.org/) (human genome finishes in less than 2 minutes using PyPy v5.8.0)
+  - Fast run time. As an example, identification of all SSRs from the entire human genome takes less than 7 minutes. The speed can be further improved ~3 to 4 fold using [PyPy](https://pypy.org/) (human genome finishes in less than 2 minutes using PyPy v5.8.0)
   - Linear time and space complexity (O(n))
   - Identifies perfect SSRs
   - 100% accurate and comprehensive - Does not miss any repeats or does not pick any incorrect ones
@@ -11,6 +11,18 @@ PERF is a recursive acronym that stands for "PERF is an Exhaustive Repeat Finder
   - Flexible - Most of the parameters are customizable by the user at runtime
   - Repeat cutoffs can be specified either in terms of the total repeat length or in terms of number of repeating units
   - TSV output and HTML report. The default output is an easily parseable and exportable tab-separated format. Optionally, PERF also generates an interactive HTML report that depicts trends in repeat data as concise charts and tables
+
+## Change log 
+
+## [4.0.0] - 2020-05-04
+### Added
+ - Identification of perfect repeats in fastq files.
+ - Annotation of repeats w.r.t to genomic context using a GFF or GTF file. (option -g).
+ - Multi-threading. Parallel identification of repeats in different sequences.
+
+### Changed
+ - Analysis report rebuilt with Semantic ui and Apex Charts.
+ - Visualisation of repeat annotation data in analysis report.
 
 ## Installation
 PERF can be directly installed using pip with the package name `perf_ssr`. 
@@ -45,27 +57,32 @@ $ PERF --help # Long option
 ```
 which gives the following output
 ```
-usage: PERF [-h] -i <FILE> [-o <FILE>] [-a] [-l <INT> | -u INT or FILE]
-            [-rep <FILE>] [-m <INT>] [-M <INT>] [-s <INT>] [-S <FLOAT>]
-            [-f <FILE> | -F <FILE>] [--version]
+usage: core.py [-h] -i <FILE> [--format <STR>] [--version] [-o <FILE>]
+               [--info] [-rep <FILE>] [-a] [-g <FILE>] [-m <INT>] [-M <INT>]
+               [-s <INT>] [-S <FLOAT>] [--include-atomic]
+               [--anno-format ANNO_FORMAT] [--gene-key <STR>]
+               [--up-promoter <INT>] [--down-promoter <INT>]
+               [-l <INT> | -u INT or FILE] [-f <FILE> | -F <FILE>] [-t <INT>]
 
 Required arguments:
   -i <FILE>, --input <FILE>
-                        Input file in FASTA format
+                        Input sequence file.
 
 Optional arguments:
+  --format <STR>        Input file format. Default: fasta, Permissible: fasta,
+                        fastq
+  --version             show program's version number and exit
   -o <FILE>, --output <FILE>
                         Output file name. Default: Input file name + _perf.tsv
-  -a, --analyse         Generate a summary HTML report.
-  -l <INT>, --min-length <INT>
-                        Minimum length cutoff of repeat
-  -u INT or FILE, --min-units INT or FILE
-                        Minimum number of repeating units to be considered.
-                        Can be an integer or a file specifying cutoffs for
-                        different motif sizes.
+  --info                Sequence file info recorded in the output.
   -rep <FILE>, --repeats <FILE>
                         File with list of repeats (Not allowed with -m and/or
                         -M)
+  -a, --analyse         Generate a summary HTML report.
+  -g <FILE>, --annotate <FILE>
+                        Genic annotation input file for annotation, Both GFF
+                        and GTF can be processed. Use --anno-format to specify
+                        format.
   -m <INT>, --min-motif-size <INT>
                         Minimum size of a repeat motif in bp (Not allowed with
                         -rep)
@@ -78,9 +95,30 @@ Optional arguments:
   -S <FLOAT>, --max-seq-length <FLOAT>
                         Maximum size of sequence length for consideration (in
                         bp)
+  --include-atomic      An option to include factor atomic repeats for minimum
+                        motif sizes greater than 1.
+  --anno-format ANNO_FORMAT
+                        Format of genic annotation file. Valid inputs: GFF,
+                        GTF. Default: GFF
+  --gene-key <STR>      Attribute key for geneId. The default identifier for a
+                        GFF file is "gene" and for a GTF file is "gene_id".
+                        Please check the annotation file and pick a robust
+                        gene identifier from the attribute column.
+  --up-promoter <INT>   Upstream distance(bp) from TSS to be considered as
+                        promoter region. Default 1000
+  --down-promoter <INT>
+                        Downstream distance(bp) from TSS to be considered as
+                        promoter region. Default 1000
+  -l <INT>, --min-length <INT>
+                        Minimum length cutoff of repeat
+  -u INT or FILE, --min-units INT or FILE
+                        Minimum number of repeating units to be considered.
+                        Can be an integer or a file specifying cutoffs for
+                        different motif sizes.
   -f <FILE>, --filter-seq-ids <FILE>
   -F <FILE>, --target-seq-ids <FILE>
-  --version             show program's version number and exit
+  -t <INT>, --threads <INT>
+                        Number of threads to run the process on. Default is 1.
 ```
 The details of each option are given below:
 
