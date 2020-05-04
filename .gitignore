@@ -12,3 +12,4 @@
 /build/
 
 /test_data/million_100.fastq
+/test_data/tenK*
