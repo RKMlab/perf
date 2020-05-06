@@ -3,10 +3,8 @@ from __future__ import print_function, division
 from operator import itemgetter
 from collections import defaultdict
 from tqdm import tqdm
-import os
-import sys
-import gzip
-from utils import rawcharCount
+import os, sys, gzip
+from .utils import rawcharCount
 
 """
 

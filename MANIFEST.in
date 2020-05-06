@@ -1,3 +1,4 @@
 include PERF/lib/src/*js
-include PERF/lib/template.html
+include PERF/lib/template_fasta.html
+include PERF/lib/template_fastq.html
 include PERF/lib/styles/*css

@@ -8,8 +8,8 @@ from collections import Counter, defaultdict
 import sys, gzip
 import multiprocessing as multi
 
-from utils import dotDict, build_cycVariations
-from analyse import analyse_fastq
+from .utils import dotDict, build_cycVariations
+from .analyse import analyse_fastq
 
 
 def get_ssrs_fastq(seq_record, repeats_info):

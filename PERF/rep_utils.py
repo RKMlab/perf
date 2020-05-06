@@ -9,9 +9,9 @@ import gzip, os
 from os import remove as del_file
 import multiprocessing as multi
 
-from utils import rev_comp, rawcharCount, getGC, get_targetids
-from analyse import analyse_fasta
-from annotation import annotate
+from .utils import rev_comp, rawcharCount, getGC, get_targetids
+from .analyse import analyse_fasta
+from .annotation import annotate
 
 
 def expand_repeat(string, size):

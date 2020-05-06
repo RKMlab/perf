@@ -1,13 +1,11 @@
 #! /usr/bin/env python
 
 from __future__ import print_function, division
-import sys
-import os
-import json
+import sys, os, json
 from collections import Counter, defaultdict
 import numpy as np
 from pprint import pprint
-from utils import rev_comp, kmers, get_cycles, build_cycVariations
+from .utils import rev_comp, kmers, get_cycles, build_cycVariations
 
 
 def writetoHTML(html_file, defaultInfo, repeat_options, input_format):
