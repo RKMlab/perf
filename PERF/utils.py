@@ -80,6 +80,7 @@ def get_targetids(filter_seq_ids, target_seq_ids):
             for line in fh:
                 line = line.strip()
                 line = line.lstrip('>')
+                line = line.split(' ')[0]
                 filter_ids.append(line)
         target_ids = target_ids - set(filter_ids)
     
@@ -89,6 +90,7 @@ def get_targetids(filter_seq_ids, target_seq_ids):
             for line in fh:
                 line = line.strip()
                 line = line.lstrip('>')
+                line = line.split(' ')[0]
                 target_ids.append(line)
         target_ids = set(target_ids)
 
