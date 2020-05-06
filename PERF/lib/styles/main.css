@@ -1,0 +1,56 @@
+#navbar {
+    position: fixed;
+    width: 50px;
+    height: 50px;
+    top: 100px; right: 0px; bottom: 0px; left: 20px;
+    z-index: 100;
+    opacity: 0.5
+}
+
+#navbar:hover {
+    opacity: 1;
+}
+
+#content {
+    min-height: 100px;
+}
+
+.ui.grid{
+    padding: 0 !important;
+}
+
+.pushable.segment{
+    margin: 0 !important;
+}
+
+.sumstat-segment {
+    box-shadow: none !important;
+    padding: 8px !important;
+    margin: 0px !important;
+    border: white !important;
+}
+
+
+
+.ms-selectable {
+    float: none !important;
+    width: 100% !important;
+}
+
+.ms-container {
+    width: 100% !important;
+}
+
+.ms-selection {
+    margin-top: 10px;
+    float: none !important;
+    width: 100% !important;
+}
+
+.button  {
+    margin-top: 5px !important
+}
+
+.plot-options {
+    min-width: 200px !important;
+}

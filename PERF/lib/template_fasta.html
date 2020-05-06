@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8" />
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <title>Perf analysis report</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <script>
+            {fontawesome_js}
+        </script>
+        <style>
+            {semantic_css}
+        </style>
+        <style>
+            {multiselect_css}
+        </style>
+        <style>
+            {apexcharts_css}
+        </style>
+        <style>
+            {main_css}
+        </style>
+    </head>
+    <body>
+        
+        <!-- Header section -->
+        <div class="ui masthead vertical segment" style="background-color: rgb(49, 9, 82); padding-top: 20px; padding-bottom: 20px">
+            <div class="ui container">
+                <div class="introduction">
+                    <p class="ui header" style="color: white">PERF analysis report
+                        <a class="ui label" href="https://github.com/RKMlab/perf" target="_blank" style="float: right">
+                            <span style="font-size: 14px">
+                                <i class="fab fa-github"></i>
+                                PERF 
+                            </span>
+                        </a>
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div class="ui hidden divider"></div>
+
+
+
+        <div class="ui contatiner" style="padding: 1vw">
+        <div id='navbar'>
+            <div class="ui vertical icon menu inverted" id = "navmenu" style="background-color: rgb(49, 9, 82)">
+                <a class="item active" title='Summary' href="#summary-main"><i class="fas fa-info-circle fa-2x"></i></a>
+                <a class="item" title="Tables" href="#table-main"><i class="fas fa-table fa-2x"></i></a>
+                <a class="item"><i class="fas fa-chart-bar fa-2x"></i></a>
+            </div>
+        </div>
+        <div class="ui one column grid">
+            <div class="column" id="content-display" style="width: 100%;">
+                
+                <!-------------------- Summary section -------------------->
+                <div class="ui top attached segment" id="summary-main">
+                    <div class="ui top attached label inverted" style="font-size: 14px; background-color: rgb(49, 9, 82)">Summary</div>
+                    class="ui sortable celled table"
+                    <div class="ui hidden divider"></div>
+
+                    <div class="ui two column stackable grid">
+                        <div class="stretched row">
+                            <div class="column center aligned" style="width: 35%">
+                                <div class="ui top attached segment">
+                                    <div class="ui top attached inverted green label" style="font-size: 12px">Genome Info</div>
+                                    <div class="column center aligned">
+                                        <div class="ui segment sumstat-segment">
+                                            <div class="ui mini green statistic">
+                                                <div class="value File_name">Homo sapiens.fna</div>
+                                                <div class="label">File Name</div>
+                                            </div>
+                                        </div>
+                                        <div class="ui segment sumstat-segment">
+                                            <div class="ui mini green statistic">
+                                                <div class="value Total_bases">3.24Gb</div>
+                                                <div class="label">Genome size</div>
+                                            </div>
+                                        </div>
+                                        <div class="ui segment sumstat-segment">
+                                            <div class="ui mini green statistic">
+                                                <div class="value GC">45.4</div>
+                                                <div class="label">GC%</div>
+        
+                                            </div>
+                                        </div>
+                                        <div class="ui segment sumstat-segment">
+                                            <div class="ui mini green statistic">
+                                                <div class="value Total_sequences">545</div>
+                                                <div class="label">Sequences</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="column center aligned" style="width: 65%">
+                                <div class="ui top attached segment">
+                                    <div class="ui top attached inverted blue label" style="font-size: 12px">Repeat Info</div>
+                                    <div class="ui two column stackable grid">
+                                        <div class="stretched row">
+                                            <div class="column center aligned">
+                                                <div class="ui segment sumstat-segment">
+                                                    <div class="ui mini blue statistic">
+                                                        <div class="value totalRepFreq">4,631,324</div>
+                                                        <div class="label">Total repeats</div>
+                                                    </div>
+                                                </div>
+                                                <div class="ui segment sumstat-segment">
+                                                    <div class="ui mini blue statistic">
+                                                        <div class="value totalRepBases">69.09 Mb</div>
+                                                        <div class="label">Repeat bases</div>
+                                                    </div>
+                                                </div>
+                                                <div class="ui segment sumstat-segment">
+                                                    <div class="ui mini blue statistic">
+                                                        <div class="value percentGenomeCovered">2.15 %</div>
+                                                        <div class="label">Percent genome covered</div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="column center aligned">
+                                                <div class="ui segment sumstat-segment">
+                                                    <div class="ui mini blue statistic">
+                                                        <div class="value numRepClasses">501/501</div>
+                                                        <div class="label">Repeat classes</div>
+                                                    </div>
+                                                </div>
+                                                <div class="ui segment sumstat-segment">
+                                                    <div class="ui mini blue statistic">
+                                                        <div class="value repDensityByFreq">1428</div>
+                                                        <div class="label">Frequency per Mb</div>
+                                                    </div>
+                                                </div>
+                                                <div class="ui segment sumstat-segment">
+                                                    <div class="ui mini blue statistic">
+                                                        <div class="value repDensityByBases">21467</div>
+                                                        <div class="label">Base density per Mb</div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-------------------- Table section -------------------->
+                <div class="ui top attached segment" id="table-main">
+                    
+                    <div class="ui top attached label inverted" style="font-size: 14px; background-color: rgb(49, 9, 82); padding: 0px">
+                        <div class="ui left floated icon menu inverted" style="background-color: rgb(49, 9, 82); cursor: none">
+                        </div>
+                        <div class="ui left floated tabular menu inverted chart" style="background-color: rgb(49, 9, 82)">
+                            <a class="item active" title="Repeat Summary Table" data-tab="summary">Summary</a>
+                            <a class="item" title="Longest repeats" data-tab="longest">Longest repeats</a>
+                            <a class="item" title="Most unit repeats" data-tab="units">Most units</a>
+                        </div>
+                    </div>
+
+                    <div class="ui hidden divider"></div>
+
+                    <div class="container">
+                        <div class="ui bottom attached tab segment active" data-tab="summary">
+                            <div class="column"  style="height: 30vh; overflow-y: scroll" id="rep-summary-table"></div>
+                        </div>
+                        
+                        <div class="ui bottom attached tab segment" data-tab="longest">
+                            <div class="column"  style="height: 30vh; overflow-y: scroll" id="longest-repeats-table"></div>
+                        </div>
+
+                        <div class="ui bottom attached tab segment" data-tab="units">
+                            <div class="column"  style="height: 30vh; overflow-y: scroll" id="mostunits-repeats-table"></div>
+                        </div>
+                    </div>
+                </div>
+
+
+                <!-- Main charts  -->
+                <div class="ui top attached segment" id="charts-main">
+                    
+                    <div class="ui top attached label inverted" style="font-size: 14px; background-color: rgb(49, 9, 82); padding: 0px">
+                        <div class="ui left floated icon menu inverted" style="background-color: rgb(49, 9, 82); cursor: none">
+                            <a class="item" title="">Basic charts</a>
+                        </div>
+                        <div class="ui left floated tabular menu inverted chart" style="background-color: rgb(49, 9, 82)">
+                            <a class="item active" title="Repeat class Frequency" data-tab="bar"><i class="fas fa-chart-bar"></i></a>
+                            <a class="item" title="Motif distributions" data-tab="pie"><i class="fas fa-chart-pie"></i></a>
+                            <a class="item" title="Repeat Length Frequency" data-tab="line"><i class="fas fa-chart-line"></i></a>
+                        </div>
+                    </div>
+
+                    <div class="ui hidden divider"></div>
+
+                    <div class="container">
+                        <div class="ui bottom attached tab segment active" data-tab="bar">
+                            <div class="ui two column stackable grid">
+                                <div class="column plot-options" style="width: 30%" id="bar-options">
+                                    <div class="ui top attached segment">
+                                        <div class="ui top attached label" style="font-size: 12px">Options</div>
+                                        
+
+                                        <div>
+                                            Show
+                                            <div class="ui inline dropdown sort-order" id="bar-sort-order" style="margin-left: 5px; margin-right: 5px">
+                                                <input type="hidden" name="sort-order">
+                                                <div class="default text">Order</div>
+                                                <div class="menu"></div>
+                                                <i class="fas fa-caret-square-down"></i>
+                                            </div>
+                                            <div class="ui input"><input id="bar-numRep" style="border-radius: 0px; border-left: none; border-right: none; border-top: none; border-bottom: 1px solid black; padding: 4px; font-weight: bold" type="number" value=10 min=1 max=501></div>
+                                        </div>
+                                        <button class="ui primary button" id="bar-sortPlot-button">Plot</button>
+
+                                        <div class="ui hidden divider"></div>
+                                        <div>
+                                            <select multiple="multiple" id="bar-repeat-select" name="bar-repeat-select">
+                                                {repeat_options}
+                                            </select>
+                                        </div>
+                                        <button class="ui primary button" id="bar-repPlot-button">Plot</button>                                    
+                                        
+                                        <div class="ui hidden divider"></div>
+                                        <div class="ui form">
+                                            <div class="inline fields">
+                                                <label for="bar-datatype" style="font-size: 12px; font-weight: bold">Data:</label>
+                                                <div class="field">
+                                                    <div class="bar ui radio checkbox">
+                                                        <input type="radio" name="bar-datatype" value="0" class="hidden">
+                                                        <label style="font-size: 12px; font-weight: bold">Bases</label>
+                                                    </div>
+                                                </div>
+                                                <div class="field">
+                                                    <div class="bar ui radio checkbox">
+                                                        <input type="radio" name="bar-datatype" checked value="1" class="hidden">
+                                                        <label style="font-size: 12px; font-weight: bold">Frequency</label>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="ui hidden divider"></div>
+                                        <button class="ui secondary icon button" id="asort-alpha"><i class="fas fa-sort-alpha-down"></i></button>
+                                        <button class="ui secondary icon button" id="dsort-alpha"><i class="fas fa-sort-alpha-down"></i></button>
+                                        <button class="ui secondary icon button" id="asort-num"><i class="fas fa-sort-amount-down-alt fa-rotate-270"></i></button>
+                                        <button class="ui secondary icon button" id="dsort-num"><i class="fas fa-sort-amount-down fa-rotate-270"></i></button>
+                                    </div>
+                                </div>
+                            
+                                <div class="column" style="width: 70%">
+                                    <div class="plot-area" id="bar-plot-area"></div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="ui bottom attached tab segment" data-tab="pie">
+                            <div class="ui two column stackable grid">
+                                <div class="column plot-options" style="width: 30%">
+                                    <div class="ui top attached segment">
+                                        <div class="ui top attached label" style="font-size: 12px">Options</div>
+                                                                            
+                                        <div class="inline field">
+                                            <div class="ui toggle checkbox pie" id="pie-kmer-toggle">
+                                                <input type="checkbox" tabindex="0" class="hidden" checked>
+                                                <label style="font-size: 12px; font-weight: bold">Kmer grouping</label>
+                                            </div>
+                                        </div>
+
+                                        <div class="ui hidden divider"></div>
+                                        
+                                        <div style="font-weight: bold; margin-bottom: 3px">Select Repeats: </div>
+                                        <div>
+                                            <select multiple="multiple" id="pie-repeat-select" name="pie-repeat-select">
+                                                {repeat_options}
+                                            </select>
+                                        </div>
+
+                                        <button class="ui primary button" id="pie-plot-button">
+                                            Plot
+                                        </button>
+
+                                        <div class="ui hidden divider"></div>
+
+                                        <div class="ui form">
+                                            <div class="inline fields">
+                                                <label for="pie-datatype" style="font-size: 12px; font-weight: bold">Data:</label>
+                                                <div class="field">
+                                                    <div class="pie ui radio checkbox pie-data-type">
+                                                        <input type="radio" name="pie-datatype" value="0" class="hidden">
+                                                        <label style="font-size: 12px; font-weight: bold">Bases</label>
+                                                    </div>
+                                                </div>
+                                                <div class="field">
+                                                    <div class="pie ui radio checkbox pie-data-type">
+                                                        <input type="radio" name="pie-datatype" checked value="1" class="hidden">
+                                                        <label style="font-size: 12px; font-weight: bold">Frequency</label>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                    </div>
+                                </div>
+                                <div class="column" style="width: 70%">
+                                    <div class="plot-area" id="pie-plot-area"></div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="ui bottom attached tab segment" data-tab="line">
+                            <div class="ui two column stackable grid">
+                                <div class="column plot-options" style="width: 30%">
+                                    <div class="ui top attached segment">
+                                        <div class="ui top attached label" style="font-size: 12px">Options</div>
+                                        <div>
+                                            <div class="ui input"><input id="line-min-len" style="border-radius: 0px; border-left: none; border-right: none; border-top: none; border-bottom: 1px solid black; padding: 4px; font-weight: bold" type="number" value=12 min=1></div>
+                                            <span style="margin-left: 2px; margin-right: 2px">to
+                                            <div class="ui input"><input id="line-max-len" style="border-radius: 0px; border-left: none; border-right: none; border-top: none; border-bottom: 1px solid black; padding: 4px; font-weight: bold" type="number" value=50 min=1></div>
+                                            <div class="ui inline dropdown units" style="margin-left: 5px; margin-right: 5px">
+                                                <input type="hidden" name="units">
+                                                <div class="default text">length</div>
+                                                <div class="menu"></div>
+                                                <i class="fas fa-caret-square-down"></i>
+                                            </div>
+                                            range
+                                        </div>
+                                        <div class="ui hidden divider"></div>
+                                        <div>
+                                            <select multiple="multiple" id="line-repeat-select" name="line-repeat-select">
+                                                {repeat_options}
+                                            </select>
+                                        </div>
+                                        <button class="ui primary button" id="line-plot-button">
+                                            Plot
+                                        </button>
+
+                                    </div>
+                                </div>
+                                <div class="column" class="plot-area" id="line-plot-area"  style="width: 70%">
+                                    <div>
+                                        
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Annotation Charts -->
+                <div class="ui top attached segment" id="anno-charts-main">
+                    
+                    <div class="ui top attached label inverted" style="font-size: 14px; background-color: rgb(49, 9, 82); padding: 0px">
+                        <div class="ui left floated icon menu inverted" style="background-color: rgb(49, 9, 82); cursor: none">
+                            <a class="item" title="">Annotation charts</a>
+                        </div>
+                        <div class="ui left floated tabular menu inverted anno-chart" style="background-color: rgb(49, 9, 82)">
+                            <a class="item active" title="Repeat class Genomic distributions" data-tab="anno-stackbar"><i class="fas fa-chart-pie"></i></a>
+                            <a class="item" title="Compare Repeat class Genomic distributions" data-tab="anno-area"><i class="fas fa-chart-area"></i></a>
+                        </div>
+                    </div>
+
+                    <div class="ui hidden divider"></div>
+
+                    <div class="container">
+                        <div class="ui bottom attached tab segment active" data-tab="anno-stackbar">
+                            <div class="ui two column stackable grid">
+                                <div class="column plot-options" style="width: 30%">
+                                    <div class="ui top attached segment">
+                                        <div class="ui top attached label" style="font-size: 12px">Options</div>
+                                        
+                                        <div class="inline field" style="margin-bottom: 20px">
+                                            <div class="ui toggle checkbox anno-stackbar" id="anno-stackbar-group-toggle">
+                                                <input type="checkbox" tabindex="0" class="hidden">
+                                                <label style="font-size: 12px; font-weight: bold">Group</label>
+                                            </div>
+                                        </div>
+                                        
+                                        <div>
+                                            <select multiple="multiple" id="anno-stackbar-repeat-select" name="anno-stackbar-repeat-select">
+                                                {repeat_options}
+                                            </select>
+                                        </div>
+
+                                        <button class="ui primary button" id="anno-stackbar-plot-button">Plot</button> 
+                                    </div>
+                                </div>
+                                <div class="column" style="width: 70%">
+                                    <div class="plot-area" id="anno-stackbar-plot-area">
+                                        
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="ui bottom attached tab segment" data-tab="anno-area">
+                            <div class="ui two column stackable grid">
+                                <div class="column plot-options" style="width: 30%">
+                                    <div class="ui top attached segment">
+                                        <div class="ui top attached label" style="font-size: 12px">Options</div>
+
+                                        <div style="margin-bottom: 20px">
+                                            Bin size: 
+                                            <div class="ui inline dropdown bin-size" id="bin-size" style="margin-left: 5px; margin-right: 5px">
+                                                <input type="hidden" name="bin-size">
+                                                <div class="default text">Bin size</div>
+                                                <div class="menu"></div>
+                                                <i class="fas fa-caret-square-down"></i>
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <select multiple="multiple" id="anno-area-repeat-select" name="anno-area-repeat-select">
+                                                {repeat_options}
+                                            </select>
+                                        </div>
+                                        <button class="ui primary button" id="anno-area-plot-button">Plot</button>
+                                    </div>
+                                </div>
+                            
+                                <div class="column" style="width: 70%">
+                                    <div class="plot-area" id="anno-area-plot-area"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </body>
+    <script>
+        {jquery_js}
+    </script>
+    <script>
+        {semantic_js}
+    </script>
+    <script>
+        {multiselect_js}
+    </script>
+    <script>
+        {apexcharts_js}
+    </script>
+    <script>
+        {lodash_js}
+    </script>
+    <script>
+        {analyse_data_js}
+    </script>
+    <script>
+        {main_js}
+    </script>
+    <script>
+        {tables_js}
+    </script>
+    <script>
+        {annocharts_js}
+    </script>
+</html>

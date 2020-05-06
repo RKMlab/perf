@@ -7,42 +7,31 @@ import json
 from collections import Counter, defaultdict
 import numpy as np
 from pprint import pprint
-from utils import rev_comp, kmers
+from utils import rev_comp, kmers, get_cycles, build_cycVariations
 
-def get_cycles(string):
-    cycles = set()
-    for i in range(len(string)):
-        cycles.add(string[i:] + string[:i])
-    cycles = sorted(list(cycles))
-    return cycles
 
-def build_cycVariations(string):
-    cycles = get_cycles(string)
-    rev_cycles = get_cycles(rev_comp(string))
-    for r in rev_cycles:
-        if r not in cycles: cycles.append(r)
-    return cycles
-
-def writetoHTML(html_file, defaultInfo, repeat_options):
+def writetoHTML(html_file, defaultInfo, repeat_options, input_format):
     html_handle = open(html_file, 'w')
     current_dir = os.path.dirname(__file__)
 
-    template = open(f'{current_dir}/lib/template.html', 'r').read()
+    template = open(f'{current_dir}/lib/template_{input_format}.html', 'r').read()
 
     fontawesome_js = open(f'{current_dir}/lib/src/all.js', 'r').read()
     semantic_css = open(f'{current_dir}/lib/styles/semantic.min.css', 'r').read()
     multiselect_css = open(f'{current_dir}/lib/styles/multi-select.min.css', 'r').read()
     apexcharts_css = open(f'{current_dir}/lib/styles/apexcharts.min.css', 'r').read()
-    main_css = open(f'{current_dir}/lib/styles/main.min.css', 'r').read()
+    main_css = open(f'{current_dir}/lib/styles/main.css', 'r').read()
 
     jquery_js = open(f"{current_dir}/lib/src/jquery-3.5.0.min.js", "r").read()
     semantic_js = open(f"{current_dir}/lib/src/semantic.min.js", "r").read()
     multiselect_js = open(f'{current_dir}/lib/src/jquery.multi-select.min.js', 'r').read()
     apexcharts_js = open(f'{current_dir}/lib/src/apexcharts.min.js', 'r').read()
     lodash_js = open(f'{current_dir}/lib/src/lodash.min.js', 'r').read()
-    main_js = open(f'{current_dir}/lib/src/main.min.js', 'r').read()
-    tables_js = open(f'{current_dir}/lib/src/tables.min.js', 'r').read()
-    annocharts_js = open(f'{current_dir}/lib/src/anno_charts.min.js', 'r').read()
+    main_js = open(f'{current_dir}/lib/src/main_{input_format}.js', 'r').read()
+    tables_js = open(f'{current_dir}/lib/src/tables_{input_format}.js', 'r').read()
+    annocharts_js = ''
+    if input_format == 'fasta':
+        annocharts_js = open(f'{current_dir}/lib/src/anno_charts.js', 'r').read()
 
     template = template.format(
         fontawesome_js = fontawesome_js, 
@@ -71,13 +60,10 @@ def get_parameters(args):
     runCommand = 'PERF' + ' '.join(sys.argv)
 
 
-def analyse(args):
-    outFile = open('./analyse_data.js', 'w')
+def analyse_fasta(args):
     repeatsOutFile = args.output.name
-    current_dir = os.path.dirname(__file__)
     html_report = os.path.splitext(repeatsOutFile)[0] + '.html'
-    inFormat = args.format
-    print("Generating HTML report. This may take a while..")
+    print("\nGenerating HTML report. This may take a while..", end="\n\n")
     
 
     all_repeat_classes = []
@@ -91,7 +77,7 @@ def analyse(args):
 
     inf = float('inf')
     defaultInfo = {}
-    defaultInfo['info'] = {'genomeInfo': {}, 'repInfo': {}, 'repInfo': {}}
+    defaultInfo['info'] = { 'seqInfo': {}, 'repInfo': {} }
     
     if args.annotate: #if annotation is on the data is taken from t
         repeatsOutFile = os.path.splitext(repeatsOutFile)[0] + '_annotation.tsv'
@@ -115,7 +101,7 @@ def analyse(args):
             line = line.strip()
             if line.startswith('#'):
                 fields = line[1:].split(': ')
-                defaultInfo['info']['genomeInfo'][fields[0]] = fields[1]
+                defaultInfo['info']['seqInfo'][fields[0]] = fields[1]
             else:
                 fields = line.split('\t')
                 fields[1] = int(fields[1])
@@ -185,9 +171,9 @@ def analyse(args):
             repeat_options += f'<option value="{r}">{r}</option>'
         repeat_options += '</optgroup>'
     
-    totalBases = int(defaultInfo['info']['genomeInfo']['Total_bases'])
+    totalBases = int(defaultInfo['info']['seqInfo']['Total_bases'])
     defaultInfo['info']['repInfo']['lenFrequency'] = plot_data
-    defaultInfo['info']['repInfo']['numRepClasses'] = len(plot_data.keys())
+    defaultInfo['info']['repInfo']['numRepClasses'] = f'{str(len(plot_data.keys()))}/{len(all_repeat_classes)}'
     defaultInfo['info']['repInfo']['totalRepBases'] = totalRepBases
     defaultInfo['info']['repInfo']['totalRepFreq'] = totalRepFreq
     defaultInfo['info']['repInfo']['percentGenomeCovered'] = str(round((totalRepBases/totalBases)*100, 2)) + "%"
@@ -214,40 +200,49 @@ def analyse(args):
         testDict = {'seq': a[0], 'start': a[1], 'end': a[2], 'repClass': a[3], 'repLength': a[4], 'repOri': a[5], 'repUnit': a[6], 'actualRep': a[7]}
         defaultInfo['info']['repInfo']['mostRepeatUnits'].append(testDict)
     defaultInfo = 'const data =' + json.dumps(defaultInfo)
-    writetoHTML(html_report, defaultInfo, repeat_options)
-    # print(defaultInfo, file=outFile)
-    outFile.close()
+    writetoHTML(html_report, defaultInfo, repeat_options, 'fasta')
 
 def analyse_fastq(args, fastq_out):
 
     """Generates HTML report for fastq files."""
-    fastq_out['info']['readInfo']['file_name'] = args.input.split('/')[-1]
-    total_repeats = fastq_out['info']['readInfo']['total_repeats']
-    reads_with_repeats = fastq_out['info']['readInfo']['reads_with_repeats']
-    total_repeat_bases = fastq_out['info']['readInfo']['total_repeat_bases']
+    html_report = os.path.splitext(args.output.name)[0] + '.html'
+    print("\nGenerating HTML report. This may take a while..", end="\n\n")
+    
+    fastq_out['info']['seqInfo']['File_name'] = args.input.split('/')[-1]
+    n = fastq_out['info']['seqInfo']['Total_reads']
+    b = fastq_out['info']['seqInfo']['Total_bases']
+    total_repeats = fastq_out['info']['repInfo']['totalRepFreq']
+    reads_with_repeats = fastq_out['info']['repInfo']['totalRepReads']
+    total_repeat_bases = fastq_out['info']['repInfo']['totalRepBases']
     all_repeat_classes = list(map(lambda x: x.split('\t')[1], args.repeats))
-    total_repeat_classes = len(fastq_out['info']['readInfo'].keys())
-    n = fastq_out['info']['readInfo']['total_reads']
-    b = fastq_out['info']['readInfo']['total_bases']
     temp = []
     for a in all_repeat_classes:
         if a not in temp:
             temp.append(a)
     all_repeat_classes = temp
     del temp
-    fastq_out['info']['readInfo']['all_rep_classes'] = all_repeat_classes
-    fastq_out['info']['readInfo']['repeatsnorm'] = round((total_repeats/n)*1000000, 2)
-    fastq_out['info']['readInfo']['reads_with_repeats_norm'] = str(round((reads_with_repeats/n)*100, 2)) + '%'
-    fastq_out['info']['readInfo']['percent_repeat_bases'] = str(round((total_repeat_bases/b)*100, 2)) + '%'
-    fastq_out['info']['readInfo']['total_repeat_classes'] = str(total_repeat_classes) + '/501'
 
-    rep_fastq_info = fastq_out['info']['repInfo']
+    kmer_classes = defaultdict(list)
+    for r in all_repeat_classes:
+        kmer_classes[kmers[len(r)]].append(r)
+    repeat_options = ""
+    for kmer in kmer_classes:
+        repeat_options += f'<optgroup label="{kmer}">'
+        for r in kmer_classes[kmer]:
+            repeat_options += f'<option value="{r}">{r}</option>'
+        repeat_options += '</optgroup>'
+
+    fastq_out['info']['repInfo']['numRepClasses'] = f"{fastq_out['info']['repInfo']['numRepClasses']}/{len(all_repeat_classes)}"
+    fastq_out['info']['repInfo']['allRepClasses'] = all_repeat_classes
+    fastq_out['info']['repInfo']['totalRepFreqNorm'] = round((total_repeats/n)*1000000, 2)
+    fastq_out['info']['repInfo']['totalRepReadsNorm'] = str(round((reads_with_repeats/n)*100, 2)) + '%'
+    fastq_out['info']['repInfo']['percentRepBases'] = str(round((total_repeat_bases/b)*100, 2)) + '%'
+
+    rep_fastq_info = fastq_out['info']['repInfo']['repClassInfo']
     for rep in sorted(rep_fastq_info, key= lambda k: (len(k), k)):
-        fastq_out['info']['repInfo'][rep]['reads_norm'] = round((rep_fastq_info[rep]['reads']/n)*1000000, 3)
-        fastq_out['info']['repInfo'][rep]['instances_norm'] = round((rep_fastq_info[rep]['instances']/n)*1000000, 3)
-        fastq_out['info']['repInfo'][rep]['bases_norm'] = round((rep_fastq_info[rep]['bases']/b)*1000000, 3)
-
-    info_out = open('/media/akshay/DATA/PERF/analysis_new/fastq/src/analyse_fastqdata.js', 'w')
-    default_info = 'const data =' + json.dumps(fastq_out)
-    print(default_info, file=info_out)
-    info_out.close()
+        fastq_out['info']['repInfo']['repClassInfo'][rep]['reads_norm'] = round((rep_fastq_info[rep]['reads']/n)*1000000, 3)
+        fastq_out['info']['repInfo']['repClassInfo'][rep]['instances_norm'] = round((rep_fastq_info[rep]['instances']/n)*1000000, 3)
+        fastq_out['info']['repInfo']['repClassInfo'][rep]['bases_norm'] = round((rep_fastq_info[rep]['bases']/b)*1000000, 3)
+    
+    defaultInfo = 'const data =' + json.dumps(fastq_out)
+    writetoHTML(html_report, defaultInfo, repeat_options, 'fastq')
