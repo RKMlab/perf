@@ -6,7 +6,7 @@
 PERF is a Python package developed for fast and accurate identification of microsatellites from DNA sequences. Microsatellites or Simple Sequence Repeats (SSRs) are short tandem repeats of 1-6nt motifs. They are present in all genomes, and have a wide range of uses and functional roles. The existing tools for SSR identification have one or more caveats in terms of speed, comprehensiveness, accuracy, ease-of-use, flexibility and memory usage. PERF was designed to address all these problems.
 
 PERF is a recursive acronym that stands for "PERF is an Exhaustive Repeat Finder". It is compatible with both Python 2 (tested on Python 2.7) and 3 (tested on Python 3.5). Its key features are:
-  - Fast run time, despite being a single-threaded application. As an example, identification of all SSRs from the entire human genome takes less than 7 minutes. The speed can be further improved ~3 to 4 fold using [PyPy](https://pypy.org/) (human genome finishes in less than 2 minutes using PyPy v5.8.0)
+  - Fast run time. As an example, identification of all SSRs from the entire human genome takes less than 7 minutes. The speed can be further improved ~3 to 4 fold using [PyPy](https://pypy.org/) (human genome finishes in less than 2 minutes using PyPy v5.8.0)
   - Linear time and space complexity (O(n))
   - Identifies perfect SSRs
   - 100% accurate and comprehensive - Does not miss any repeats or does not pick any incorrect ones
@@ -14,6 +14,20 @@ PERF is a recursive acronym that stands for "PERF is an Exhaustive Repeat Finder
   - Flexible - Most of the parameters are customizable by the user at runtime
   - Repeat cutoffs can be specified either in terms of the total repeat length or in terms of number of repeating units
   - TSV output and HTML report. The default output is an easily parseable and exportable tab-separated format. Optionally, PERF also generates an interactive HTML report that depicts trends in repeat data as concise charts and tables
+
+## Change log 
+
+## [4.0.0] - 2020-05-04
+### Added
+ - Annotation of repeats w.r.t to genomic context using a GFF or GTF file. (option -g).
+ - Multi-threading. Parallel identification of repeats in different sequences.
+ - Identification of perfect repeats in fastq files.
+ - Analysis report for repeats in fastq files.
+ - Option to identify atomic repeats.
+
+### Changed
+ - Analysis report rebuilt with Semantic ui and Apex Charts.
+ - Visualisation of repeat annotation data in analysis report.
 
 ## Installation
 PERF can be directly installed using pip with the package name `perf_ssr`. 
@@ -48,24 +62,23 @@ $ PERF --help # Long option
 ```
 which gives the following output
 ```
-usage: PERF [-h] -i <FILE> [-o <FILE>] [-a] [-l <INT> | -u INT or FILE]
-            [-rep <FILE>] [-m <INT>] [-M <INT>] [-s <INT>] [-S <FLOAT>]
-            [-f <FILE> | -F <FILE>] [--version]
+usage: core.py [-h] -i <FILE> [-o <FILE>] [--format <STR>] [--version]
+               [-rep <FILE>] [-m <INT>] [-M <INT>] [-s <INT>] [-S <FLOAT>]
+               [--include-atomic] [-l <INT> | -u INT or FILE] [-a] [--info]
+               [-g <FILE>] [--anno-format <STR>] [--gene-key <STR>]
+               [--up-promoter <INT>] [--down-promoter <INT>]
+               [-f <FILE> | -F <FILE>] [-t <INT>]
 
 Required arguments:
   -i <FILE>, --input <FILE>
-                        Input file in FASTA format
+                        Input sequence file.
 
 Optional arguments:
   -o <FILE>, --output <FILE>
                         Output file name. Default: Input file name + _perf.tsv
-  -a, --analyse         Generate a summary HTML report.
-  -l <INT>, --min-length <INT>
-                        Minimum length cutoff of repeat
-  -u INT or FILE, --min-units INT or FILE
-                        Minimum number of repeating units to be considered.
-                        Can be an integer or a file specifying cutoffs for
-                        different motif sizes.
+  --format <STR>        Input file format. Default: fasta, Permissible: fasta,
+                        fastq
+  --version             show program's version number and exit
   -rep <FILE>, --repeats <FILE>
                         File with list of repeats (Not allowed with -m and/or
                         -M)
@@ -81,22 +94,53 @@ Optional arguments:
   -S <FLOAT>, --max-seq-length <FLOAT>
                         Maximum size of sequence length for consideration (in
                         bp)
+  --include-atomic      An option to include factor atomic repeats for minimum
+                        motif sizes greater than 1.
+  -l <INT>, --min-length <INT>
+                        Minimum length cutoff of repeat
+  -u INT or FILE, --min-units INT or FILE
+                        Minimum number of repeating units to be considered.
+                        Can be an integer or a file specifying cutoffs for
+                        different motif sizes.
+  -a, --analyse         Generate a summary HTML report.
+  --info                Sequence file info recorded in the output.
   -f <FILE>, --filter-seq-ids <FILE>
+                        List of sequence ids in fasta file which will be
+                        ignored.
   -F <FILE>, --target-seq-ids <FILE>
-  --version             show program's version number and exit
+                        List of sequence ids in fasta file which will be used.
+  -t <INT>, --threads <INT>
+                        Number of threads to run the process on. Default is 1.
+
+Annotation arguments:
+  -g <FILE>, --annotate <FILE>
+                        Genic annotation input file for annotation, Both GFF
+                        and GTF can be processed. Use --anno-format to specify
+                        format.
+  --anno-format <STR>   Format of genic annotation file. Valid inputs: GFF,
+                        GTF. Default: GFF
+  --gene-key <STR>      Attribute key for geneId. The default identifier is
+                        "gene". Please check the annotation file and pick a
+                        robust gene identifier from the attribute column.
+  --up-promoter <INT>   Upstream distance(bp) from TSS to be considered as
+                        promoter region. Default 1000
+  --down-promoter <INT>
+                        Downstream distance(bp) from TSS to be considered as
+                        promoter region. Default 1000
 ```
 The details of each option are given below:
 
 ### `-i or --input`
 **Expects:** *FILE*<br>
 **Default:** *None*<br>
-This is the only required argument for the program. The input file must be a valid FASTA file. PERF uses [Biopython's](http://biopython.org/wiki/SeqIO) FASTA parser to read the input files. It accepts both single-line and multi-line sequences. Files with multiple sequences are also valid. To see more details about the FASTA format, see [this page](http://bioperl.org/formats/sequence_formats/FASTA_sequence_format).
+This is the only required argument for the program. The input file must be a valid FASTA/FASTQ file. PERF uses [Biopython's](http://biopython.org/wiki/SeqIO) FASTA parser to read the input fasta files. It accepts both single-line and multi-line sequences. Files with multiple sequences are also valid. To see more details about the FASTA format, see [this page](http://bioperl.org/formats/sequence_formats/FASTA_sequence_format).
 
 ### `-o or --output`
 **Expects:** *STRING (to be used as filename)*<br>
 **Default:** *Input Filename + _perf.tsv (see below)*<br>
-The output is a tab-delimited file, with one SSR record per line. If this option is not provided, the default output filename will be the same as the input filename, with its extension replaced with '_perf.tsv'. For example, if the input filename is `my_seq.fa`, the default output filename will be `my_seq_perf.tsv`. If the input filename does not have any extension, `_perf.tsv` will be appended to the filename. Please note that even in the case of no identified SSRs, the output file is still created (therefore overwriting any previous file of the same name) but with no content in the file.
-
+If this option is not provided, the default output filename will be the same as the input filename, with its extension replaced with '_perf.tsv'. For example, if the input filename is `my_seq.fa`, the default output filename will be `my_seq_perf.tsv`. If the input filename does not have any extension, `_perf.tsv` will be appended to the filename. Please note that even in the case of no identified SSRs, the output file is still created (therefore overwriting any previous file of the same name) but with no content in the file.
+#### Output for fasta
+The output is a tab-delimited file, with one SSR record per line. 
 The output columns follow the [BED](https://genome.ucsc.edu/FAQ/FAQformat.html) format. The details of the columns are given below:
 
 | S.No | Column | Description |
@@ -123,6 +167,26 @@ X       15442288  15442724  ACAGAT  436     +       72      ACAGAT
 2L      22086818  22087152  AATACT  334     -       55      TATTAG
 YHet    137144    137466    AAGAC   322     -       64      CTTGT
 ```
+
+#### Output for fastq
+The output is a tab-delimited file, with data on each repeat class per line.
+| S.No | Column | Description |
+|:----:| ------ | ----------- |
+| 1 | Repeat Class | Class of repeat as grouped by their cyclical variations |
+| 2 | Number of reads | Number of reads having an instance of the repeat |
+| 3 | Frequency | Total number of instances of the repeat  |
+| 4 | Bases | Total number of bases covered by the repeat |
+| 5 | Repeat reads per million reads | Number of  |
+| 6 | Instances per million reads | Strand of SSR based on their cyclical variation |
+| 7 | Repeat Bases per MB of sequence | Number of times the base motif is repeated |
+| 8 | Length distribution | Starting sequence of the SSR irrespective of Repeat class and strand|
+| 9 | Motif distribution | Starting sequence of the SSR irrespective of Repeat class and strand|
+
+
+### `--format`
+**Expects:** *STRING (specifying format of the file)*<br>
+**Default:** *fasta*<br>
+PERF was originally developed to identify repeats in FASTA files. In version 4.0.0 PERF can identify repeats in FASTQ sequence files as well. The default format the program expects is fasta. Specify input format as 'fasta' for FASTA files and 'fastq' for FASTQ files.
 
 ### `-a or --analyze`
 **Expects:** *None*<br>
@@ -181,6 +245,11 @@ Minimum length of motifs to be considered. By default, PERF ignores redundant mo
 **Default:** *6*<br>
 Maximum length of motifs to be considered. Setting a large value of `-M` has a non-trivial effect on both the runtime and memory usage of PERF. This is noticeable with `-M` values above 10.
 
+### `--include-atomic`
+**Expects:** *None*<br>
+**Default:** *False*<br>
+Searches for atomic repeats when set to *True*. For example, when minimum motif size is set to 2bp, PERF ignores monomer repeats. When include atomic repeats is set to *True*, PERF identifies AA, CC, GG and TT as dimer repeats.
+
 ### `-s or --min-seq-length`
 **Expects:** *INTEGER*<br>
 **Default:** *0*<br>
@@ -201,6 +270,20 @@ This option accepts a file with a list of sequence IDs in the input file that sh
 **Default:** *None*<br>
 This option accepts a file with a list of sequence IDs in the input file that should be analyzed. All other sequences will be ignored. Useful for analyzing specific chromosomes from a large input file. The IDs can be FASTA headers (starting with '>' symbol) or just the names without the '>' symbol.
 
+### `--info`
+**Expects:** *None*<br>
+**Default:** *False*<br>
+This option when set to *True*, includes information about the input sequence files and repeat summary data in the output file.
+
+```bash
+$ tail -5 test_input_perf.tsv
+gi|514486271|gb|KE346361.1|	2667759	2667775	ATC	16	+	5	CAT
+#File_name: test_input.fa
+#Total_sequences: 2
+#Total_bases: 6462134
+#GC: 53.970000
+```
+
 ### `--version`
 Prints the version info of PERF.
 
@@ -214,6 +297,8 @@ The following examples assume that the file with input sequence in FASTA format 
 $ PERF -i my_seq.fa
 # Specify output filename
 $ PERF -i my_seq.fa -o PERF_output.tsv
+# Specify fastq format
+$ PERF -i my_seq.fastq --format fastq
 ```
 
 #### Generate Analysis Report

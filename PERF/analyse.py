@@ -5,191 +5,244 @@ import sys
 import os
 import json
 from collections import Counter, defaultdict
-from Bio import SeqIO
-from datetime import datetime
-import gzip
+import numpy as np
+from pprint import pprint
+from utils import rev_comp, kmers, get_cycles, build_cycVariations
 
 
-def writetoHTML(html_file, defaultInfo):
+def writetoHTML(html_file, defaultInfo, repeat_options, input_format):
     html_handle = open(html_file, 'w')
     current_dir = os.path.dirname(__file__)
-    with open(current_dir + '/lib/template.html') as report:
-        for line in report:
-            line = line.strip()
-            print(line, file=html_handle)
-            try:
-                start_index = line.index("^^")
-                stop_index = line.index("$$")
-                if (line[start_index+2: stop_index] == 'defaultInfo'):
-                    print(defaultInfo, file=html_handle)
-                else:
-                    file_path = current_dir + '/lib' + line[start_index+2: stop_index]
-                    with open(file_path) as fh:
-                        for subline in fh:
-                            subline = subline.strip()
-                            print(subline, file=html_handle)
-            except ValueError:
-                pass
+
+    template = open(f'{current_dir}/lib/template_{input_format}.html', 'r').read()
+
+    fontawesome_js = open(f'{current_dir}/lib/src/all.js', 'r').read()
+    semantic_css = open(f'{current_dir}/lib/styles/semantic.min.css', 'r').read()
+    multiselect_css = open(f'{current_dir}/lib/styles/multi-select.min.css', 'r').read()
+    apexcharts_css = open(f'{current_dir}/lib/styles/apexcharts.min.css', 'r').read()
+    main_css = open(f'{current_dir}/lib/styles/main.css', 'r').read()
+
+    jquery_js = open(f"{current_dir}/lib/src/jquery-3.5.0.min.js", "r").read()
+    semantic_js = open(f"{current_dir}/lib/src/semantic.min.js", "r").read()
+    multiselect_js = open(f'{current_dir}/lib/src/jquery.multi-select.min.js', 'r').read()
+    apexcharts_js = open(f'{current_dir}/lib/src/apexcharts.min.js', 'r').read()
+    lodash_js = open(f'{current_dir}/lib/src/lodash.min.js', 'r').read()
+    main_js = open(f'{current_dir}/lib/src/main_{input_format}.js', 'r').read()
+    tables_js = open(f'{current_dir}/lib/src/tables_{input_format}.js', 'r').read()
+    annocharts_js = ''
+    if input_format == 'fasta':
+        annocharts_js = open(f'{current_dir}/lib/src/anno_charts.js', 'r').read()
+
+    template = template.format(
+        fontawesome_js = fontawesome_js, 
+        semantic_css = semantic_css, 
+        multiselect_css = multiselect_css, 
+        apexcharts_css = apexcharts_css, 
+        main_css = main_css, 
+        jquery_js = jquery_js, 
+        semantic_js = semantic_js, 
+        multiselect_js = multiselect_js, 
+        apexcharts_js = apexcharts_js, 
+        lodash_js = lodash_js, 
+        analyse_data_js = defaultInfo, 
+        main_js = main_js, 
+        tables_js = tables_js, 
+        annocharts_js = annocharts_js,
+        repeat_options = repeat_options,
+    )
+
+    print(template, file=html_handle)
     html_handle.close()
     print("HTML report successfully saved to " + html_file)
 
-def analyse(args):
-    seq_file = args.input
+
+def get_parameters(args):
+    runCommand = 'PERF' + ' '.join(sys.argv)
+
+
+def analyse_fasta(args):
     repeatsOutFile = args.output.name
-    current_dir = os.path.dirname(__file__)
     html_report = os.path.splitext(repeatsOutFile)[0] + '.html'
-    print("Generating HTML report. This may take a while..")
+    print("\nGenerating HTML report. This may take a while..", end="\n\n")
+    
+
+    all_repeat_classes = []
+    kmer_classes = defaultdict(list)
+    cyclical_variations = dict()
+    for r in args.repeats:
+        r = r.split('\t')[1]
+        if r not in all_repeat_classes:
+            all_repeat_classes.append(r)
+            cyclical_variations[r] = build_cycVariations(r)
+
     inf = float('inf')
     defaultInfo = {}
-    defaultInfo['info'] = {}
-    defaultInfo['info']['name'] = seq_file
-    defaultInfo['info']['genomeSize'] = 0
-    defaultInfo['info']['numSeq'] = 0
-    defaultInfo['info']['seqInfo'] = []
-    totalSeq = 0
-    totalBases = 0
-    basesCounter = Counter()
-    seqSizes = {}
-    if seq_file.endswith('gz'):
-        fastaFile = gzip.open(seq_file, 'rt')
-    else:
-        fastaFile = open(seq_file, 'r')
-    for record in SeqIO.parse(fastaFile, 'fasta'):
-        totalSeq += 1
-        seq = str(record.seq).upper()
-        totalBases += len(seq)
-        basesCounter.update(seq)
-        seqSizes[record.id] = len(seq)
-    try:
-        GC = (float(basesCounter["G"] + basesCounter["C"])/(totalBases-basesCounter["N"]))*100
-    except KeyError:
-        GC = (float(basesCounter["G"] + basesCounter["C"])/totalBases)*100
-    defaultInfo['info']['genomeSize'] = totalBases
-    defaultInfo['info']['GC'] = round(GC, 2)
-    defaultInfo['info']['numSeq'] = totalSeq
+    defaultInfo['info'] = { 'seqInfo': {}, 'repInfo': {} }
+    
+    if args.annotate: #if annotation is on the data is taken from t
+        repeatsOutFile = os.path.splitext(repeatsOutFile)[0] + '_annotation.tsv'
+        promUp = args.up_promoter
+        promDown = args.down_promoter
+        defaultInfo['info']['annoInfo'] = {'promUp': promUp, 'promDown': promDown}
+        repAnno = {}
+        TSS_dist = {}
+        annoKeyDict = {}
+    
     totalRepBases = 0
     totalRepFreq = 0
-    repFreqByClass = []
-    repBasesByClass = []
-    chrFreq = {}
-    chrBases = {}
-    plotData = {'replen': {}, 'repunit': {}}
-    plotInfo = {'len': {}, 'unit': {}}
     longestLengths = [['seq', 'start', 'stop', 'repClass', 0, '+', 0, 'actualrep']]*100
     mostUnits = [['seq', 'start', 'stop', 'repClass', 0, '+', 0, 'actualrep']]*100
     minLength = inf
     minUnits = inf
-    starttime = datetime.now()
+
+    plot_data = dict()
     with open(repeatsOutFile, 'r') as repFile:
         for line in repFile:
             line = line.strip()
-            fields = line.split('\t')
-            fields[1] = int(fields[1])
-            fields[2] = int(fields[2])
-            fields[4] = int(fields[4])
-            fields[6] = int(fields[6])
+            if line.startswith('#'):
+                fields = line[1:].split(': ')
+                defaultInfo['info']['seqInfo'][fields[0]] = fields[1]
+            else:
+                fields = line.split('\t')
+                fields[1] = int(fields[1])
+                fields[2] = int(fields[2])
+                fields[4] = int(fields[4])
+                fields[6] = int(fields[6])
 
-            seq = fields[0]
-            start = fields[1]
-            end = fields[2]
-            repClass = fields[3]
-            repLength = fields[4]
-            repOri = fields[5]
-            repUnit = fields[6]
-            actualRepeat = fields[7]
-            totalRepBases += repLength
-            totalRepFreq += 1
+                seq = fields[0]
+                start = fields[1]
+                end = fields[2]
+                repClass = fields[3]
+                repLength = fields[4]
+                repOri = fields[5]
+                repUnit = fields[6]
+                actualRepeat = fields[7]
+                if args.annotate:
+                    if repClass not in repAnno:
+                        repAnno[repClass] = {'EP': 0, 'GP': 0, 'GN': 0, 'IP': 0, 'DP': 0, 'EN': 0, 'IN': 0, 'DN': 0, 'UU': 0}
+                        TSS_dist[repClass] = []
+                    genicKey = fields[12]
+                    promKey = fields[13]
+                    try:
+                        tssD = int(fields[-1])
+                        if -5000 <= tssD <= 5000:
+                            TSS_dist[repClass].append(tssD)
+                    except:
+                        pass
+                    if genicKey == 'Intergenic':
+                        genicKey = 'Distal Intergenic'
+                    elif genicKey == '-':
+                        genicKey = 'Unannotated'
+                        promKey = 'Unannotated'
+                    annoKey = genicKey[0]+promKey[0]
+                    annoKeyDict[annoKey] = genicKey + '+' + promKey
+                    repAnno[repClass][annoKey] += 1 
 
-            if minUnits > repUnit:
-                minUnits = repUnit
-            if minLength > repLength:
-                minLength = repLength
+                totalRepBases += repLength
+                totalRepFreq += 1
 
-            if longestLengths[-1][4] < repLength:
-                longestLengths[-1] = fields
-            elif longestLengths[-1][4] == repLength:
-                if repClass < longestLengths[-1][3]:
+                if repClass not in plot_data:
+                    plot_data[repClass] = dict()
+                    plot_data[repClass][repLength] = [0]*len(cyclical_variations[repClass])
+                if repLength not in plot_data[repClass]: 
+                    plot_data[repClass][repLength] = [0]*len(cyclical_variations[repClass])
+                plot_data[repClass][repLength][cyclical_variations[repClass].index(actualRepeat)] += 1
+
+                if minUnits > repUnit: minUnits = repUnit
+                if minLength > repLength: minLength = repLength
+
+                if (longestLengths[-1][4] < repLength) or (longestLengths[-1][4] == repLength and repClass < longestLengths[-1][3]):
                     longestLengths[-1] = fields
-            longestLengths.sort(key=lambda x: x[4])
-            longestLengths.reverse()
-            if mostUnits[-1][6] < repUnit:
-                mostUnits[-1] = fields
-            elif mostUnits[-1][6] == repUnit:
-                if repClass < longestLengths[-1][3]:
-                    longestLengths[-1] = fields
-            mostUnits.sort(key=lambda x: x[6])
-            mostUnits.reverse()
+                    longestLengths.sort(key=lambda x: x[4])
+                    longestLengths.reverse()
+                if (mostUnits[-1][6] < repUnit) or (mostUnits[-1][6] == repUnit and repClass < longestLengths[-1][3]):
+                    mostUnits[-1] = fields
+                    mostUnits.sort(key=lambda x: x[6])
+                    mostUnits.reverse()
+    for r in all_repeat_classes:
+        kmer_classes[kmers[len(r)]].append(r)
+        if r not in plot_data:
+            plot_data[r] = 0
 
-            if repClass not in plotData['replen']:
-                plotData['replen'][repClass] = {}
-                plotData['replen'][repClass][repLength] = 1
-                plotData['repunit'][repClass] = {}
-                plotData['repunit'][repClass][repUnit] = 1
-            elif repClass in plotData['replen']:
-                if repLength not in plotData['replen'][repClass]:
-                    plotData['replen'][repClass][repLength] = 1
-                elif repLength in plotData['replen'][repClass]:
-                    plotData['replen'][repClass][repLength] += 1
-                if repUnit not in plotData['repunit'][repClass]:
-                    plotData['repunit'][repClass][repUnit] = 1
-                elif repUnit in plotData['repunit'][repClass]:
-                    plotData['repunit'][repClass][repUnit] += 1
-
-    for rep in plotData['replen']:
-        freqs = list(plotData['replen'][rep].values())
-        repFreqByClass.append({ 'name': rep, 'value': sum(freqs) })
-        repBasesByClass.append({ 'name': rep, 'value': sum(list(map(lambda x: x*(minLength + freqs.index(x)), freqs))) })
-        lenfreqs = []
-        unitfreqs = []
-        lengths = sorted(list(plotData['replen'][rep].keys()))
-        units = sorted(list(plotData['repunit'][rep].keys()))
-        for i in range(minLength, max(lengths) + 1):
-            try:
-                lenfreqs.append(plotData['replen'][rep][i])
-            except KeyError:
-                lenfreqs.append(0)
-        for i in range(minUnits, max(units) + 1):
-            try:
-                unitfreqs.append(plotData['repunit'][rep][i])
-            except KeyError:
-                unitfreqs.append(0)
-        plotInfo['len'][rep] = lenfreqs
-        plotInfo['unit'][rep] = unitfreqs
-
-    defaultInfo['info']['plotInfo'] = plotInfo
-    defaultInfo['info']['numRepClass'] = len(repFreqByClass)
-    defaultInfo['info']['totalRepBases'] = totalRepBases
-    defaultInfo['info']['totalRepFreq'] = totalRepFreq
-    defaultInfo['info']['repFreqByClass'] = repFreqByClass
-    defaultInfo['info']['repBasesByClass'] = repBasesByClass
-    defaultInfo['info']['percentGenomeCovered'] = str(round((totalRepBases/totalBases)*100, 2)) + "%"
-    defaultInfo['info']['repDensityByFreq'] = round((totalRepFreq/totalBases)*1000000, 2)
-    defaultInfo['info']['repDensityByBases'] = round((totalRepBases/totalBases)*1000000, 2)
-    defaultInfo['info']['minLength'] = minLength
-    defaultInfo['info']['minUnits'] = minUnits
-    defaultInfo['info']['longestRepeats'] = []
-    defaultInfo['info']['mostRepeatUnits'] = []
+    repeat_options = ""
+    for kmer in kmer_classes:
+        repeat_options += f'<optgroup label="{kmer}">'
+        for r in kmer_classes[kmer]:
+            repeat_options += f'<option value="{r}">{r}</option>'
+        repeat_options += '</optgroup>'
+    
+    totalBases = int(defaultInfo['info']['seqInfo']['Total_bases'])
+    defaultInfo['info']['repInfo']['lenFrequency'] = plot_data
+    defaultInfo['info']['repInfo']['numRepClasses'] = f'{str(len(plot_data.keys()))}/{len(all_repeat_classes)}'
+    defaultInfo['info']['repInfo']['totalRepBases'] = totalRepBases
+    defaultInfo['info']['repInfo']['totalRepFreq'] = totalRepFreq
+    defaultInfo['info']['repInfo']['percentGenomeCovered'] = str(round((totalRepBases/totalBases)*100, 2)) + "%"
+    defaultInfo['info']['repInfo']['repDensityByFreq'] = round((totalRepFreq/totalBases)*1000000, 2)
+    defaultInfo['info']['repInfo']['repDensityByBases'] = round((totalRepBases/totalBases)*1000000, 2)
+    defaultInfo['info']['repInfo']['minLength'] = minLength
+    defaultInfo['info']['repInfo']['minUnits'] = minUnits
+    defaultInfo['info']['repInfo']['longestRepeats'] = []
+    defaultInfo['info']['repInfo']['mostRepeatUnits'] = []
+    defaultInfo['info']['repInfo']['allRepClasses'] = all_repeat_classes
+    if args.annotate:
+        for r in TSS_dist:
+            hist_values = np.histogram(TSS_dist[r], bins=200, range=(-5000,5000))
+            TSS_dist[r] = list(hist_values[0])
+            TSS_dist[r] = list(map(lambda x: int(x), TSS_dist[r]))
+        defaultInfo['info']['annoInfo']['TSS_histBinEdges'] = list(map(lambda x: int(x), hist_values[1]))
+        defaultInfo['info']['annoInfo']['repAnno'] = repAnno
+        defaultInfo['info']['annoInfo']['TSS_dist'] = TSS_dist
+        defaultInfo['info']['annoInfo']['annoKeyObj'] = annoKeyDict
     for a in longestLengths:
         testDict = {'seq': a[0], 'start': a[1], 'end': a[2], 'repClass': a[3], 'repLength': a[4], 'repOri': a[5], 'repUnit': a[6], 'actualRep': a[7]}
-        defaultInfo['info']['longestRepeats'].append(testDict)
+        defaultInfo['info']['repInfo']['longestRepeats'].append(testDict)
     for a in mostUnits:
         testDict = {'seq': a[0], 'start': a[1], 'end': a[2], 'repClass': a[3], 'repLength': a[4], 'repOri': a[5], 'repUnit': a[6], 'actualRep': a[7]}
-        defaultInfo['info']['mostRepeatUnits'].append(testDict)
-    seqSizes = Counter(seqSizes)
-    for a in seqSizes.most_common(100):
-        seqInfo = {}
-        seqInfo['name'] = a[0]
-        seqInfo['size'] = a[1]
-        try:
-            seqInfo['freq'] = chrFreq[a[0]]
-            seqInfo['bp'] = chrBases[a[0]]
-            seqInfo['freqDens'] = str(round((chrFreq[a[0]]/int(a[1]))*1000000, 2))
-            seqInfo['bpDens'] = str(round((chrBases[a[0]]/int(a[1]))*1000000, 2))
-        except KeyError:
-            seqInfo['freq'] = 0
-            seqInfo['bp'] = 0
-            seqInfo['freqDens'] = "0.0"
-            seqInfo['bpDens'] = "0.0"
-        defaultInfo['info']['seqInfo'].append(seqInfo)
+        defaultInfo['info']['repInfo']['mostRepeatUnits'].append(testDict)
     defaultInfo = 'const data =' + json.dumps(defaultInfo)
-    writetoHTML(html_report, defaultInfo)
+    writetoHTML(html_report, defaultInfo, repeat_options, 'fasta')
+
+def analyse_fastq(args, fastq_out):
+
+    """Generates HTML report for fastq files."""
+    html_report = os.path.splitext(args.output.name)[0] + '.html'
+    print("\nGenerating HTML report. This may take a while..", end="\n\n")
+    
+    fastq_out['info']['seqInfo']['File_name'] = args.input.split('/')[-1]
+    n = fastq_out['info']['seqInfo']['Total_reads']
+    b = fastq_out['info']['seqInfo']['Total_bases']
+    total_repeats = fastq_out['info']['repInfo']['totalRepFreq']
+    reads_with_repeats = fastq_out['info']['repInfo']['totalRepReads']
+    total_repeat_bases = fastq_out['info']['repInfo']['totalRepBases']
+    all_repeat_classes = list(map(lambda x: x.split('\t')[1], args.repeats))
+    temp = []
+    for a in all_repeat_classes:
+        if a not in temp:
+            temp.append(a)
+    all_repeat_classes = temp
+    del temp
+
+    kmer_classes = defaultdict(list)
+    for r in all_repeat_classes:
+        kmer_classes[kmers[len(r)]].append(r)
+    repeat_options = ""
+    for kmer in kmer_classes:
+        repeat_options += f'<optgroup label="{kmer}">'
+        for r in kmer_classes[kmer]:
+            repeat_options += f'<option value="{r}">{r}</option>'
+        repeat_options += '</optgroup>'
+
+    fastq_out['info']['repInfo']['numRepClasses'] = f"{fastq_out['info']['repInfo']['numRepClasses']}/{len(all_repeat_classes)}"
+    fastq_out['info']['repInfo']['allRepClasses'] = all_repeat_classes
+    fastq_out['info']['repInfo']['totalRepFreqNorm'] = round((total_repeats/n)*1000000, 2)
+    fastq_out['info']['repInfo']['totalRepReadsNorm'] = str(round((reads_with_repeats/n)*100, 2)) + '%'
+    fastq_out['info']['repInfo']['percentRepBases'] = str(round((total_repeat_bases/b)*100, 2)) + '%'
+
+    rep_fastq_info = fastq_out['info']['repInfo']['repClassInfo']
+    for rep in sorted(rep_fastq_info, key= lambda k: (len(k), k)):
+        fastq_out['info']['repInfo']['repClassInfo'][rep]['reads_norm'] = round((rep_fastq_info[rep]['reads']/n)*1000000, 3)
+        fastq_out['info']['repInfo']['repClassInfo'][rep]['instances_norm'] = round((rep_fastq_info[rep]['instances']/n)*1000000, 3)
+        fastq_out['info']['repInfo']['repClassInfo'][rep]['bases_norm'] = round((rep_fastq_info[rep]['bases']/b)*1000000, 3)
+    
+    defaultInfo = 'const data =' + json.dumps(fastq_out)
+    writetoHTML(html_report, defaultInfo, repeat_options, 'fastq')

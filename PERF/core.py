@@ -3,145 +3,100 @@
 # pylint: disable=C0103, C0301
 
 from __future__ import print_function, division
-import sys
+import sys, argparse, gzip, json, ntpath
 from os.path import splitext
-import argparse
-from tqdm import tqdm
-from Bio import SeqIO
-from collections import Counter
-import gzip
+from datetime import datetime
+import multiprocessing as multi
 
-if sys.version_info.major == 2:
-    from utils import generate_repeats, get_ssrs, build_rep_set, univset, rawcharCount
-    from analyse import analyse
-elif sys.version_info.major == 3:
-    from utils import generate_repeats, get_ssrs, build_rep_set, univset, rawcharCount
-    from analyse import analyse
+from utils import rawcharCount, dotDict, getGC, get_targetids
+from rep_utils import generate_repeats, get_ssrs, build_rep_set, fasta_ssrs
+from fastq_utils import fastq_ssrs
 
 inf = float('inf')
+
 
 def getArgs():
     """
     Parses command line arguments and returns them to the caller
     """
-    __version__ = 'v0.2.5'
+    __version__ = 'v0.4.0'
     parser = argparse.ArgumentParser()
     parser._action_groups.pop()
+
     required = parser.add_argument_group('Required arguments')
-    required.add_argument('-i', '--input', required=True, metavar='<FILE>', help='Input file in FASTA format')
+    required.add_argument('-i', '--input', required=True, metavar='<FILE>', help='Input sequence file.')
+    
     optional = parser.add_argument_group('Optional arguments')
-    optional.add_argument('-o', '--output', type=argparse.FileType('w'), metavar='<FILE>', default=sys.stdout, help='Output file name. Default: Input file name + _perf.tsv')
-    optional.add_argument('-a', '--analyse', action='store_true', default=False, help='Generate a summary HTML report.')
+    
+    #Basic options
+    optional.add_argument('-o', '--output', type=argparse.FileType('r+'), metavar='<FILE>', default=sys.stdout, help='Output file name. Default: Input file name + _perf.tsv')
+    optional.add_argument('--format', metavar='<STR>', default='fasta', help='Input file format. Default: fasta, Permissible: fasta, fastq')
+    optional.add_argument('--version', action='version', version='PERF ' + __version__)
+        
+    #Selections options based on motif size and seq lengths
+    optional.add_argument('-rep', '--repeats', type=argparse.FileType('r'), metavar='<FILE>', help='File with list of repeats (Not allowed with -m and/or -M)')
+    optional.add_argument('-m', '--min-motif-size', type=int, metavar='<INT>', default=1, help='Minimum size of a repeat motif in bp (Not allowed with -rep)')
+    optional.add_argument('-M', '--max-motif-size', type=int, metavar='<INT>', default=6, help='Maximum size of a repeat motif in bp (Not allowed with -rep)')
+    optional.add_argument('-s', '--min-seq-length', type=int, metavar = '<INT>', default=0, help='Minimum size of sequence length for consideration (in bp)')
+    optional.add_argument('-S', '--max-seq-length', type=float, metavar='<FLOAT>', default=inf, help='Maximum size of sequence length for consideration (in bp)')
+    optional.add_argument('--include-atomic', action='store_true', default=False, help='An option to include factor atomic repeats for minimum motif sizes greater than 1.')
+
+    #Cutoff options (min_length or min_units)    
     cutoff_group = optional.add_mutually_exclusive_group()
     cutoff_group.add_argument('-l', '--min-length', type=int, metavar='<INT>', help='Minimum length cutoff of repeat')
     cutoff_group.add_argument('-u', '--min-units', metavar='INT or FILE', help="Minimum number of repeating units to be considered. Can be an integer or a file specifying cutoffs for different motif sizes.")
-    optional.add_argument('-rep', '--repeats', type=argparse.FileType('r'), metavar='<FILE>', help='File with list of repeats (Not allowed with -m and/or -M)')
-    optional.add_argument('-m', '--min-motif-size', type=int, metavar='<INT>', help='Minimum size of a repeat motif in bp (Not allowed with -rep)')
-    optional.add_argument('-M', '--max-motif-size', type=int, metavar='<INT>', help='Maximum size of a repeat motif in bp (Not allowed with -rep)')
-    optional.add_argument('-s', '--min-seq-length', type=int, metavar = '<INT>', default=0, help='Minimum size of sequence length for consideration (in bp)')
-    optional.add_argument('-S', '--max-seq-length', type=float, metavar='<FLOAT>', default=inf, help='Maximum size of sequence length for consideration (in bp)')
+    
+    # Analysis options
+    optional.add_argument('-a', '--analyse', action='store_true', default=False, help='Generate a summary HTML report.')
+    optional.add_argument('--info', action='store_true', default=False, help='Sequence file info recorded in the output.')
+    
+    #Annotation options
+    annotation = parser.add_argument_group('Annotation arguments')
+    annotation.add_argument('-g', '--annotate', metavar='<FILE>', help='Genic annotation input file for annotation, Both GFF and GTF can be processed. Use --anno-format to specify format.')
+    annotation.add_argument('--anno-format', metavar='<STR>',default='GFF', type=str, help='Format of genic annotation file. Valid inputs: GFF, GTF. Default: GFF')
+    annotation.add_argument('--gene-key', metavar='<STR>', default='gene', type=str, help='Attribute key for geneId. The default identifier is "gene". Please check the annotation file and pick a robust gene identifier from the attribute column.')
+    annotation.add_argument('--up-promoter', metavar='<INT>', type=int, default=1000, help='Upstream distance(bp) from TSS to be considered as promoter region. Default 1000')
+    annotation.add_argument('--down-promoter', metavar='<INT>', type=int, default=1000, help='Downstream distance(bp) from TSS to be considered as promoter region. Default 1000')    
+    
+    
+    #Filter based on seqIds
     seqid_group = optional.add_mutually_exclusive_group()
-    seqid_group.add_argument('-f', '--filter-seq-ids', metavar='<FILE>')
-    seqid_group.add_argument('-F', '--target-seq-ids', metavar='<FILE>')
-    optional.add_argument('--version', action='version', version='PERF ' + __version__)
+    seqid_group.add_argument('-f', '--filter-seq-ids', metavar='<FILE>', help='List of sequence ids in fasta file which will be ignored.')
+    seqid_group.add_argument('-F', '--target-seq-ids', metavar='<FILE>', help='List of sequence ids in fasta file which will be used.')
+
+    #Multiprocessing threads
+    optional.add_argument('-t', '--threads', type=int, metavar='<INT>', default=1, help='Number of threads to run the process on. Default is 1.')
 
     args = parser.parse_args()
+
     if args.repeats and (args.min_motif_size or args.max_motif_size):
         parser.error("-rep is not allowed with -m/-M")
-    if args.repeats is None:
-        if args.min_motif_size is None:
-            args.min_motif_size = 1
-        if args.max_motif_size is None:
-            args.max_motif_size = 6
+    
     if args.output.name == "<stdout>":
         args.output = open(splitext(args.input)[0] + '_perf.tsv', 'w')
 
     return args
 
-def get_targetids(filter_seq_ids, target_seq_ids):
-    target_ids = univset()
-    if filter_seq_ids:
-        target_ids = univset()
-        filter_ids = []
-        with open(filter_seq_ids) as fh:
-            for line in fh:
-                line = line.strip()
-                line = line.lstrip('>')
-                filter_ids.append(line)
-        target_ids = target_ids - set(filter_ids)
-    elif target_seq_ids:
-        target_ids = []
-        with open(target_seq_ids) as fh:
-            for line in fh:
-                line = line.strip()
-                line = line.lstrip('>')
-                target_ids.append(line)
-        target_ids = set(target_ids)
 
-    return target_ids
-
-def getSSRNative(args):
+def ssr_native(args, length_cutoff=False, unit_cutoff=False):
     """
     Identifies microsatellites using native string matching.
     As the entire sequence is scanned in a single iteration, the speed is vastly improved
     """
-
-    length_cutoff = args.min_length
     repeat_file = args.repeats
-    seq_file = args.input
-    out_file = args.output
-    repeats_info = build_rep_set(repeat_file, length_cutoff=length_cutoff)
-    repeat_set = set(repeats_info.keys())
-    min_seq_length = args.min_seq_length
-    max_seq_length = args.max_seq_length
-    target_ids = get_targetids(args.filter_seq_ids, args.target_seq_ids)
-    print('Using length cutoff of %d' % (length_cutoff), file=sys.stderr)
+    if length_cutoff:
+        length_cutoff = args.min_length
+        repeats_info = build_rep_set(repeat_file, length_cutoff=length_cutoff)
+        print('Using length cutoff of %d' % (length_cutoff), file=sys.stderr)
+    elif unit_cutoff:
+        repeats_info = build_rep_set(repeat_file, unit_cutoff=unit_cutoff)
+        print('Using unit cutoff of ', unit_cutoff, file=sys.stderr)
 
-    num_records = rawcharCount(seq_file, '>')
-    if seq_file.endswith('gz'):
-        handle = gzip.open(seq_file, 'rt')
-    else:
-        handle = open(seq_file, 'r')
+    if args.format == 'fasta':
+        fasta_ssrs(args, repeats_info)
 
-    records = SeqIO.parse(handle, 'fasta')
-    records = tqdm(records, total=num_records)
-    for record in records:
-        records.set_description("Processing %s" %(record.id))
-        if  min_seq_length <= len(record.seq) <= max_seq_length and record.id in target_ids:
-            get_ssrs(record, repeats_info, repeat_set, out_file)
-    out_file.close()
-
-
-def getSSR_units(args, unit_cutoff):
-    """
-    Identifies microsatellites using native string matching.
-    The repeat length cutoffs vary for different motif sizes.
-    """
-
-    repeat_file = args.repeats
-    seq_file = args.input
-    out_file = args.output
-    repeats_info = build_rep_set(repeat_file, unit_cutoff=unit_cutoff)
-    repeat_set = set(repeats_info.keys())
-    min_seq_length = args.min_seq_length
-    max_seq_length = args.max_seq_length
-    target_ids = get_targetids(args.filter_seq_ids, args.target_seq_ids)
-    print('Using unit cutoff of ', unit_cutoff, file=sys.stderr)
-
-    num_records = rawcharCount(seq_file, '>')
-    if seq_file.endswith('gz'):
-        handle = gzip.open(seq_file, 'rt')
-    else:
-        handle = open(seq_file, 'r')
-
-    records = SeqIO.parse(handle, 'fasta')
-    records = tqdm(records, total=num_records)
-    for record in records:
-        records.set_description("Processing %s" %(record.id))
-        if  (min_seq_length <= len(record.seq) <= max_seq_length) and record.id in target_ids:
-            get_ssrs(record, repeats_info, repeat_set, out_file)
-
-    out_file.close()
+    elif args.format == 'fastq':
+        fastq_ssrs(args, repeats_info)
 
 
 def main():
@@ -154,22 +109,24 @@ def main():
     if args.repeats is None:
         min_motif_size = args.min_motif_size
         max_motif_size = args.max_motif_size
-        args.repeats = generate_repeats(min_motif_size, max_motif_size)
+        args.repeats = generate_repeats(min_motif_size, max_motif_size, args.include_atomic)
 
     # User specifies minimum length
     if args.min_length:
-        getSSRNative(args)
+        ssr_native(args, length_cutoff=args.min_length)
 
     # User specific minimum number of units
     elif args.min_units:
         unit_cutoff = dict()
         try:
             args.min_units = int(args.min_units)
-            unit_cutoff[0] = args.min_units
+            min_motif_size = args.min_motif_size
+            max_motif_size = args.max_motif_size
+            for m in range(min_motif_size, max_motif_size+1): unit_cutoff[m] = args.min_units
         except ValueError:
             try:
-                with open(args.min_units, 'r') as unitsIn:
-                    for line in unitsIn:
+                with open(args.min_units, 'r') as input_units:
+                    for line in input_units:
                         L = line.strip().split()
                         try:
                             L[0] = int(L[0])
@@ -181,17 +138,12 @@ def main():
                             sys.exit('Invalid file format given for minimum units. Refer to help for more details')
             except FileNotFoundError:
                 sys.exit('Units file specified is not found. Please provide a valid file')
-        getSSR_units(args, unit_cutoff)
+        ssr_native(args, unit_cutoff=unit_cutoff)
 
     # Default settings
     elif args.min_length is None and args.min_units is None:
         args.min_length = 12
-        getSSRNative(args)
-           
-    # Specifies to generate a HTML report
-    if args.analyse:
-        analyse(args)
-
+        ssr_native(args, length_cutoff=args.min_length)
 
 if __name__ == '__main__':
     main()
