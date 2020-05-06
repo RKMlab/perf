@@ -1,4 +1,7 @@
 # PERF
+[![Build](https://img.shields.io/badge/Build-passing-brightgreen.svg)]()
+[![PyPI](https://img.shields.io/badge/PyPI-v0.2.5-blue.svg)]()
+[![License](https://img.shields.io/badge/Licence-MIT-blue.svg)]()
 ## Introduction
 PERF is a Python package developed for fast and accurate identification of microsatellites from DNA sequences. Microsatellites or Simple Sequence Repeats (SSRs) are short tandem repeats of 1-6nt motifs. They are present in all genomes, and have a wide range of uses and functional roles. The existing tools for SSR identification have one or more caveats in terms of speed, comprehensiveness, accuracy, ease-of-use, flexibility and memory usage. PERF was designed to address all these problems.
 
@@ -281,6 +284,49 @@ gi|514486271|gb|KE346361.1|	2667759	2667775	ATC	16	+	5	CAT
 #GC: 53.970000
 ```
 
+### `-g or --annotate`
+**Expects:** *FILE*<br>
+**Default:** *None*<br>
+Input a genomic feature file to annotate the repeats in the genomic context. PERF accepts both GFF and GTF format genomic feature files. Each repeat is annotated w.r.t the closest gene and classified either as Genic, Exonic, Intronic and Intergenic according to the position of the repeat. Besides this, the repeat is also checked if it falls in the promoter region of the gene. Annotation adds 7 columns to the default perf output which already consist 8 columns.
+
+| S.No | Column | Description |
+|:----:| ------ | ----------- |
+| 9 | Gene name | Name of the closest gene |
+| 10 | Gene Start | Start position of gene in the Chromosome |
+| 11 | Gene Stop | End position of gene in the Chromosome |
+| 12 | Strand | The strand orientation of the gene |
+| 13 | Genomic annotation | Annotation of the repeat w.r.t to the gene. Possible annotations are {Genic, Exonic, Intronic, Intergenic} |
+| 14 | Promoter annotation | If repeat falls in the promoter region of the closest gene. The default promoter region is 1Kb upstream and downstream of TSS. |
+| 15 | Distance from TSS | Distance of the repeat from the TSS of the gene. |
+
+### `--anno-format`
+**Expects:** *STRING*<br>
+**Default:** *GFF*<br>
+Option to specify the format of the input genomic feature file. Accepted  inputs are GFF or GTF. More details about the GFF and GTF formats can be found [here](https://asia.ensembl.org/info/website/upload/gff.html).
+
+### `--gene-key`
+**Expects:** *STRING*<br>
+**Default:** *gene*<br>
+The attribute key used for the name of the gene in the GFF/GTF file. In the below example GFF file, we have the location of a gene and it's mRNA and exon locations. The last column of the file specifies attributes associated with each feature, like ID, Parent, gene etc. PERF uses on of the attribute to identify the gene and also it's exons. In th below example the key "gene" can be used to identify gene and the exons of the gene as they have the same gene name. Please check your GFF/GTF file for a robust attribute key which can identify all genes and their corresponding exons. We are actively working on better annotation where we can identify genes and their exons based on the ID and Parent.
+
+```
+# Sample GFF
+NC_004354.4	RefSeq	gene	124370	126714	.	-	.	ID=gene1;Name=CG17636;gbkey=Gene;gene=CG17636;gene_biotype=protein_coding;gene_synonym=DmelCG17636,EG:23E12.1;
+NC_004354.4	RefSeq	mRNA	124370	126714	.	-	.	ID=rna1;Parent=gene1;Name=NM_001103384.3;gbkey=mRNA;gene=CG17636;transcript_id=NM_001103384.3
+NC_004354.4	RefSeq	exon	126626	126714	.	-	.	ID=id13;Parent=rna1;gbkey=mRNA;gene=CG17636;transcript_id=NM_001103384.3
+NC_004354.4	RefSeq	exon	125495	126259	.	-	.	ID=id14;Parent=rna1;gbkey=mRNA;gene=CG17636;transcript_id=NM_001103384.3
+```
+
+### `--up-promoter`
+**Expects:** *INT*<br>
+**Default:** *1000*<br>
+Upstream distance(bp) from the TSS of the gene to be considered as promoter region. Default 1000.
+
+### `--down-promoter`
+**Expects:** *INT*<br>
+**Default:** *1000*<br>
+Downstream distance(bp) from the TSS of the gene to be considered as promoter region. Default 1000.
+
 ### `--version`
 Prints the version info of PERF.
 
@@ -304,6 +350,14 @@ $ PERF -i my_seq.fastq --format fastq
 $ PERF -i my_seq.fa -a
 # Specify output filename
 $ PERF -i my_seq.fa -o PERF_out.tsv -a # HTML file is called PERF_out.html
+```
+
+#### Annotate Repeats
+``` bash
+# Find all monomer to hexamer repeats of >=12nt length and annotate them
+$ PERF -i my_seq.fa -g my_seq.gff
+# Specify feature file format and set downstream promoter region to 500bp
+$ PERF -i my_seq.fa -g my_seq.gtf --anno-format gtf --down-promoter 500 # HTML file is called PERF_out.html
 ```
 
 #### Set Cut-off Criteria
@@ -335,6 +389,16 @@ $ PERF -i my_seq.fa -m 4 -M 4 -l 16 -a
 ```
 
 In all the above examples, the output of PERF is saved to `my_seq_perf.tsv` and the HTML report is saved to `my_seq_perf.html` unless `-o` is specified.
+
+
+## Citation
+
+If you find PERF useful for your research, please cite it as follows:
+
+PERF: an exhaustive algorithm for ultra-fast and efficient identification of microsatellites from large DNA sequences<br>
+*Akshay Kumar Avvaru, Divya Tej Sowpati, Rakesh Kumar Mishra*<br>
+Bioinformatics, , btx721<br>
+[doi](https://doi.org/10.1093/bioinformatics/btx721): 10.1093/bioinformatics/btx721
 
 ## Contact
 For queries or suggestions, please contact:
