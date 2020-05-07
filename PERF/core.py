@@ -8,9 +8,14 @@ from os.path import splitext
 from datetime import datetime
 import multiprocessing as multi
 
-from .utils import rawcharCount, dotDict, getGC, get_targetids
-from .rep_utils import generate_repeats, get_ssrs, build_rep_set, fasta_ssrs
-from .fastq_utils import fastq_ssrs
+if sys.version_info.major == 2:
+    from utils import rawcharCount, dotDict, getGC, get_targetids
+    from rep_utils import generate_repeats, get_ssrs, build_rep_set, fasta_ssrs
+    from fastq_utils import fastq_ssrs
+elif sys.version_info.major == 3:
+    from .utils import rawcharCount, dotDict, getGC, get_targetids
+    from .rep_utils import generate_repeats, get_ssrs, build_rep_set, fasta_ssrs
+    from .fastq_utils import fastq_ssrs
 
 inf = float('inf')
 

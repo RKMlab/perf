@@ -4,7 +4,11 @@ from operator import itemgetter
 from collections import defaultdict
 from tqdm import tqdm
 import os, sys, gzip
-from .utils import rawcharCount
+
+if sys.version_info.major == 2:
+    from utils import rawcharCount
+elif sys.version_info.major == 3:
+    from .utils import rawcharCount
 
 """
 
@@ -112,8 +116,8 @@ def process_annofile(annofile, annotype, gene_id):
                     gene_name = attr_obj[gene_id]
                 except KeyError:
                     print('\nGeneKeyError:')
-                    print(f'The attribute "{gene_id}" is not among the attributes for gene. Please select a different one.')
-                    print(f'The available ones are [{", ".join(list(attr_obj.keys()))}]', end='\n\n')
+                    print('The attribute "%s" is not among the attributes for gene. Please select a different one.' %(gene_id))
+                    print('The available ones are ['+ (", ".join(list(attr_obj.keys()))) +']', end='\n\n')
                     sys.exit(1)
 
             if feature == 'gene':
