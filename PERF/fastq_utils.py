@@ -8,8 +8,12 @@ from collections import Counter, defaultdict
 import sys, gzip
 import multiprocessing as multi
 
-from utils import dotDict, build_cycVariations
-from analyse import analyse_fastq
+if sys.version_info.major == 2:
+    from utils import dotDict, build_cycVariations
+    from analyse import analyse_fastq
+elif sys.version_info.major == 3:
+    from .utils import dotDict, build_cycVariations
+    from .analyse import analyse_fastq
 
 
 def get_ssrs_fastq(seq_record, repeats_info):
@@ -45,7 +49,7 @@ def get_ssrs_fastq(seq_record, repeats_info):
                     if sub_stop >= input_seq_length:
                         match = False
                         match_length = sub_stop - sub_start
-                        repeats[rep_class].append(f'{sub_seq[:motif_length]}-{match_length}')
+                        repeats[rep_class].append('%s-%d'%(sub_seq[:motif_length], match_length))
                         sub_start = sub_stop - fallback
                     elif input_seq[j] == repeat_seq[i]:
                         sub_stop += 1
@@ -55,7 +59,7 @@ def get_ssrs_fastq(seq_record, repeats_info):
                     else:
                         match = False
                         match_length = sub_stop - sub_start
-                        repeats[rep_class].append(f'{sub_seq[:motif_length]}-{match_length}')
+                        repeats[rep_class].append('%s-%d'%(sub_seq[:motif_length], match_length))
                         sub_start = sub_stop - fallback
             else:
                 sub_start += 1
@@ -183,12 +187,12 @@ def ssr_fastq_output(fastq_out, out_file):
     total_repeat_classes = fastq_repeat_info['numRepClasses']
     repeat_class_info = fastq_repeat_info['repClassInfo']
     
-    print(f'#Total_reads: {n}', file=out_file)
-    print(f'#Total_bases: {b}', file=out_file)
-    print(f'#Total_repeat_instances: {total_repeats}', file=out_file)
-    print(f'#Total_reads_with_repeats: {reads_with_repeats}', file=out_file)
-    print(f'#Total_repeats_per_million_reads: {round((total_repeats/n)*1000000, 3)}', file=out_file)
-    print(f'#Read_length_distribution: {readlen_freq.most_common()}', file=out_file)
+    print('#Total_reads: %d'%(n), file=out_file)
+    print('#Total_bases: %d' %(b), file=out_file)
+    print('#Total_repeat_instances: %d' %(total_repeats), file=out_file)
+    print('#Total_reads_with_repeats: %d' %(reads_with_repeats), file=out_file)
+    print('#Total_repeats_per_million_reads: %f' %(round((total_repeats/n)*1000000, 3)), file=out_file)
+    print('#Read_length_distribution: ', readlen_freq.most_common(), file=out_file)
 
     print('repeatClass', 'reads', 'instances', 'bases', 'reads_per_million', 'instances_per_million',
         'bases_norm', 'length_distribution', 'motif_distribution', sep='\t', file=out_file)

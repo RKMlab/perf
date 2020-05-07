@@ -2,10 +2,9 @@
 # pylint: disable=C0111, C0301
 
 from __future__ import print_function, division
-import sys
+import sys, gzip
 from itertools import takewhile, repeat, islice
 from tqdm import tqdm
-import gzip
 from collections import Counter, defaultdict
 
 
