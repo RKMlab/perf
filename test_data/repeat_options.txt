@@ -1,0 +1,6 @@
+A	A	1	+
+T	A	1	-
+AG	AG	2	+
+CT	AG	2	-
+GA	AG	2	+
+TC	AG	2	-

@@ -18,6 +18,11 @@ elif sys.version_info.major == 3:
     from .analyse import analyse_fasta
     from .annotation import annotate
 
+def num_factors(num):
+    factors = []
+    for i in range(1,num):
+        if num%i == 0: factors.append(i)
+    return factors
 
 def expand_repeat(string, size):
     """Expands a motif to highest motif size, used for checking duplicates"""
@@ -38,21 +43,38 @@ def get_cycles(string):
     return cycles
 
 
-def generate_repeats(min_size, max_size, atomic):
+def generate_repeats(sizes, atomic):
     """Generates all possible motifs for repeats in a given length range"""
     generated_repeats = []
     alphabet = ['A', 'C', 'G', 'T']
     expanded_set = set()
     repeat_set = set()
-    init_size = 1
-    if atomic:
-        init_size = min_size
-    for i in range(init_size, max_size+1):
+    sizes.sort()
+    min_size = sizes[0]
+    max_size = sizes[-1]
+    non_atomic_repeats = dict()
+    for s in range(1, max_size):
+        if s not in sizes:
+            non_atomic_repeats[s] = set()
+            if atomic:
+                for combination in product(alphabet, repeat=s):
+                    repeat = ''.join(combination)
+                    expanded = expand_repeat(repeat, max_size)
+                    non_atomic_repeats[s].add(expanded)
+    for i in sizes:
+        factors = num_factors(i)
         for combination in product(alphabet, repeat=i):
             repeat = ''.join(combination)
             repeat_revcomp = rev_comp(repeat)
             expanded = expand_repeat(repeat, max_size)
+            atomic_check = False
+            if atomic:
+                for factor in factors:
+                    if factor not in sizes and expanded in non_atomic_repeats[factor]:
+                        atomic_check = True
             if expanded in expanded_set:
+                continue
+            elif atomic and atomic_check:
                 continue
             else:
                 repeat_cycles = get_cycles(repeat)

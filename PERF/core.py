@@ -24,7 +24,7 @@ def getArgs():
     """
     Parses command line arguments and returns them to the caller
     """
-    __version__ = 'v0.4.5'
+    __version__ = 'v0.4.6'
     parser = argparse.ArgumentParser()
     parser._action_groups.pop()
 
@@ -34,14 +34,14 @@ def getArgs():
     optional = parser.add_argument_group('Optional arguments')
     
     #Basic options
-    optional.add_argument('-o', '--output', type=argparse.FileType('r+'), metavar='<FILE>', default=sys.stdout, help='Output file name. Default: Input file name + _perf.tsv')
+    optional.add_argument('-o', '--output', type=argparse.FileType('w'), metavar='<FILE>', default=sys.stdout, help='Output file name. Default: Input file name + _perf.tsv')
     optional.add_argument('--format', metavar='<STR>', default='fasta', help='Input file format. Default: fasta, Permissible: fasta, fastq')
     optional.add_argument('--version', action='version', version='PERF ' + __version__)
         
     #Selections options based on motif size and seq lengths
     optional.add_argument('-rep', '--repeats', type=argparse.FileType('r'), metavar='<FILE>', help='File with list of repeats (Not allowed with -m and/or -M)')
-    optional.add_argument('-m', '--min-motif-size', type=int, metavar='<INT>', default=1, help='Minimum size of a repeat motif in bp (Not allowed with -rep)')
-    optional.add_argument('-M', '--max-motif-size', type=int, metavar='<INT>', default=6, help='Maximum size of a repeat motif in bp (Not allowed with -rep)')
+    optional.add_argument('-m', '--min-motif-size', type=int, metavar='<INT>', help='Minimum size of a repeat motif in bp (Not allowed with -rep)')
+    optional.add_argument('-M', '--max-motif-size', type=int, metavar='<INT>', help='Maximum size of a repeat motif in bp (Not allowed with -rep)')
     optional.add_argument('-s', '--min-seq-length', type=int, metavar = '<INT>', default=0, help='Minimum size of sequence length for consideration (in bp)')
     optional.add_argument('-S', '--max-seq-length', type=float, metavar='<FLOAT>', default=inf, help='Maximum size of sequence length for consideration (in bp)')
     optional.add_argument('--include-atomic', action='store_true', default=False, help='An option to include factor atomic repeats for minimum motif sizes greater than 1.')
@@ -76,6 +76,11 @@ def getArgs():
 
     if args.repeats and (args.min_motif_size or args.max_motif_size):
         parser.error("-rep is not allowed with -m/-M")
+    if args.repeats is None:
+        if args.min_motif_size is None:
+            args.min_motif_size = 1
+        if args.max_motif_size is None:
+            args.max_motif_size = 6
     
     if args.output.name == "<stdout>":
         args.output = open(splitext(args.input)[0] + '_perf.tsv', 'w')
@@ -110,12 +115,13 @@ def main():
     """
     args = getArgs()
 
+
     # User specifies motif size range instead of giving a repeats file
     if args.repeats is None:
         min_motif_size = args.min_motif_size
         max_motif_size = args.max_motif_size
-        args.repeats = generate_repeats(min_motif_size, max_motif_size, args.include_atomic)
-
+        sizes = list(range(min_motif_size, max_motif_size+1))
+        args.repeats = generate_repeats(sizes, args.include_atomic)
     # User specifies minimum length
     if args.min_length:
         ssr_native(args, length_cutoff=args.min_length)
@@ -130,17 +136,22 @@ def main():
             for m in range(min_motif_size, max_motif_size+1): unit_cutoff[m] = args.min_units
         except ValueError:
             try:
+                max_motif_size = 0
+                min_motif_size = float('inf')
                 with open(args.min_units, 'r') as input_units:
                     for line in input_units:
                         L = line.strip().split()
                         try:
                             L[0] = int(L[0])
+                            if (L[0] < min_motif_size): min_motif_size= L[0]
+                            if (L[0] > max_motif_size): max_motif_size= L[0]
                             L[1] = int(L[1])
                             if L[1] == 1:
                                 print('Warning: Repeat unit of 1 used for size %d.' % (L[0]), file=sys.stderr)
                             unit_cutoff[L[0]] = L[1]
                         except ValueError:
                             sys.exit('Invalid file format given for minimum units. Refer to help for more details')
+                args.repeats = generate_repeats(list(unit_cutoff.keys()), args.include_atomic)
             except FileNotFoundError:
                 sys.exit('Units file specified is not found. Please provide a valid file')
         ssr_native(args, unit_cutoff=unit_cutoff)
