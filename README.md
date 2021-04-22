@@ -17,6 +17,11 @@ PERF is a recursive acronym that stands for "PERF is an Exhaustive Repeat Finder
 
 ## Change log 
 
+## [0.4.6] - 2021-04-22
+### Fixes
+ - Fixed usage of unit options file input for fastq input.
+ - Fixed usage of repeats input file.
+
 ## [0.4.5] - 2020-05-07
 ### Added
  - Annotation of repeats w.r.t to genomic context using a GFF or GTF file. (option -g).
